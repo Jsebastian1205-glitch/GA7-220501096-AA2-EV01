@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildZone — Compara · Elige · Construye</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="Style.css">
+</head>
+<body>
+
+<!-- Barra superior de navegación principal -->
+<nav>
+  <a class="nav-logo" onclick="showPage('inicio')">
+    <div class="nav-logo-icon">⬡</div>
+    <div class="nav-logo-text"><span>BUILD</span><span>ZONE</span></div>
+  </a>
+  <div class="nav-links">
+    <button class="nav-link active" id="nav-inicio" onclick="showPage('inicio')">Inicio</button>
+    <button class="nav-link" id="nav-productos" onclick="showPage('productos')">Productos</button>
+    <button class="nav-link" id="nav-comparador" onclick="showPage('comparador')">Comparador</button>
+    <button class="nav-link" id="nav-blog" onclick="showPage('inicio'); document.getElementById('blog-section')?.scrollIntoView({behavior:'smooth'})">Blog</button>
+    <button class="nav-link" id="nav-planes" onclick="showPage('planes'); window.cargarPlanes?.()">Planes</button>
+    <button class="nav-link" id="nav-contacto" onclick="showPage('contacto')">Contacto</button>
+    <button class="nav-link" id="nav-admin" onclick="showPage('admin'); window.cargarAdmin?.()" style="display:none">Admin</button>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-icon-btn">🔍</div>
+    <div class="nav-icon-btn" id="nav-login-btn" data-login="true">👤</div>
+    <div class="nav-user-area" id="nav-user-area" style="display:none"></div>
+  </div>
+</nav>
+
+<!-- Página de inicio, activa por defecto -->
+<div class="page active" id="page-inicio">
+
+  <!-- Sección principal con el hero y la ilustración del PC -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-inner">
+      <div>
+        <div class="hero-tag">Plataforma #1 de comparación de componentes</div>
+        <h1 class="hero-title">Encuentra y compara los mejores<br><span class="accent">componentes</span> para tu PC</h1>
+        <p class="hero-desc">Compara rendimiento, precios y características entre cientos de componentes. Elige lo mejor para ti con datos reales y reseñas verificadas.</p>
+        <div class="hero-btns">
+          <button class="btn btn-primary" onclick="showPage('productos')">🚀 Explorar productos</button>
+          <button class="btn btn-outline" onclick="showPage('comparador')">⚡ Ir al comparador</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item"><div class="stat-num">500+</div><div class="stat-label">Componentes</div></div>
+          <div class="stat-item"><div class="stat-num">12K+</div><div class="stat-label">Usuarios</div></div>
+          <div class="stat-item"><div class="stat-num">98%</div><div class="stat-label">Satisfacción</div></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-glow-orb"></div>
+        <div class="pc-case">
+          <div class="pc-window">
+            <div class="pc-fan fan1"></div>
+            <div class="pc-fan fan2"></div>
+            <div class="pc-fan fan3"></div>
+            <div class="pc-gpu">
+              <div class="pc-gpu-fans">
+                <div class="pc-gpu-fan"></div>
+                <div class="pc-gpu-fan" style="animation-duration:2.8s"></div>
+                <div class="pc-gpu-fan" style="animation-duration:1.8s"></div>
+              </div>
+            </div>
+          </div>
+          <div class="pc-leds">
+            <div class="pc-led"></div>
+            <div class="pc-led"></div>
+            <div class="pc-led"></div>
+            <div class="pc-led"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección de categorías principales del catálogo -->
+  <section class="section">
+    <div class="section-label">Catálogo</div>
+    <h2 class="section-title">Categorías principales</h2>
+    <p class="section-sub">Explora por tipo de componente y encuentra exactamente lo que buscas.</p>
+    <div class="categories-grid" style="margin-top:2rem">
+      <div class="cat-card"><span class="cat-icon">🕹️</span><div class="cat-name">Procesadores</div></div>
+      <div class="cat-card"><span class="cat-icon">🎮</span><div class="cat-name">Tarjetas Gráficas</div></div>
+      <div class="cat-card"><span class="cat-icon">💾</span><div class="cat-name">Memorias RAM</div></div>
+      <div class="cat-card"><span class="cat-icon">💿</span><div class="cat-name">Almacenamiento</div></div>
+      <div class="cat-card"><span class="cat-icon">🔌</span><div class="cat-name">Placas Madre</div></div>
+      <div class="cat-card"><span class="cat-icon">❄️</span><div class="cat-name">Refrigeración</div></div>
+      <div class="cat-card"><span class="cat-icon">🖱️</span><div class="cat-name">Accesorios</div></div>
+      <div class="cat-card"><span class="cat-icon">🔋</span><div class="cat-name">Fuentes de Poder</div></div>
+      <div class="cat-card"><span class="cat-icon">🖥️</span><div class="cat-name">Monitores</div></div>
+    </div>
+    <div style="text-align:center;margin-top:2rem">
+      <button class="btn btn-outline" onclick="showPage('productos')">Ver todas las categorías →</button>
+    </div>
+  </section>
+
+  <!-- Banner promocional para entrar al comparador -->
+  <section class="section-sm">
+    <div class="compare-banner">
+      <div class="compare-banner-text">
+        <h3>⚖️ Compara fácilmente</h3>
+        <p>Añade hasta 3 componentes y descubre cuál se adapta mejor a tus necesidades y presupuesto.</p>
+      </div>
+      <button class="btn btn-primary" onclick="showPage('comparador')">Ir al comparador →</button>
+    </div>
+  </section>
+
+  <!-- Sección de noticias y contenido reciente -->
+  <section class="section" id="blog-section">
+    <div class="section-label">Blog</div>
+    <h2 class="section-title">Últimas noticias</h2>
+    <div class="news-grid" style="margin-top:2rem">
+      <div class="news-card" data-article="cpu-guide">
+  <div class="news-thumb">🖥️</div>
+  <div class="news-body">
+    <div class="news-tag">Guías</div>
+    <div class="news-title">Cómo elegir el mejor procesador para tu PC en 2025</div>
+    <div class="news-link">Leer más →</div>
+  </div>
+</div>
+<div class="news-card" data-article="build-guide">
+  <div class="news-thumb">🔧</div>
+  <div class="news-body">
+    <div class="news-tag">Tutorial</div>
+    <div class="news-title">Guía para armar tu PC paso a paso sin errores</div>
+    <div class="news-link">Leer más →</div>
+  </div>
+</div>
+<div class="news-card" data-article="gpu-2025">
+  <div class="news-thumb">🎮</div>
+  <div class="news-body">
+    <div class="news-tag">Novedades</div>
+    <div class="news-title">Nuevas GPUs lanzadas en 2025: análisis completo</div>
+    <div class="news-link">Leer más →</div>
+  </div>
+</div>
+<div class="news-card" data-article="ram-guide">
+  <div class="news-thumb">💾</div>
+  <div class="news-body">
+    <div class="news-tag">Guías</div>
+    <div class="news-title">RAM: ¿cuánta necesitas y qué velocidad elegir?</div>
+    <div class="news-link">Leer más →</div>
+  </div>
+</div>
+<div class="news-card" data-article="cooling-guide">
+  <div class="news-thumb">❄️</div>
+  <div class="news-body">
+    <div class="news-tag">Tutorial</div>
+    <div class="news-title">Refrigeración líquida vs aire: cuál conviene más</div>
+    <div class="news-link">Leer más →</div>
+  </div>
+</div>
+<div class="news-card" data-article="amd-vs-intel">
+  <div class="news-thumb">⚖️</div>
+  <div class="news-body">
+    <div class="news-tag">Comparativas</div>
+    <div class="news-title">AMD vs Intel en 2025: ¿quién gana en relación precio-rendimiento?</div>
+    <div class="news-link">Leer más →</div>
+  </div>
+</div>
+      </div>
+  </section>
+
+  <!-- Pie de página con enlaces secundarios -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <div class="nav-logo" style="margin-bottom:1rem">
+            <div class="nav-logo-icon" style="width:28px;height:28px;font-size:12px">⬡</div>
+            <div class="nav-logo-text" style="font-size:1.1rem"><span>BUILD</span><span>ZONE</span></div>
+          </div>
+          <div style="color:var(--gray3);font-size:0.85rem;line-height:1.6">Información de la plataforma y misión.</div>
+          <div class="footer-socials" style="margin-top:1rem">
+            <div class="social-btn">f</div>
+            <div class="social-btn">📸</div>
+            <div class="social-btn">▶</div>
+          </div>
+        </div>
+        <div>
+          <div class="footer-col-title">Sobre nosotros</div>
+          <div class="footer-links">
+            <div class="footer-link">Información de la plataforma</div>
+            <div class="footer-link">Nuestra misión</div>
+          </div>
+        </div>
+        <div>
+          <div class="footer-col-title">Enlaces rápidos</div>
+          <div class="footer-links">
+            <div class="footer-link" onclick="showPage('productos')">Productos</div>
+            <div class="footer-link" onclick="showPage('comparador')">Comparador</div>
+            <div class="footer-link" onclick="showPage('inicio'); document.getElementById('blog-section')?.scrollIntoView({behavior:'smooth'})">Blog</div>
+            <div class="footer-link" onclick="showPage('planes'); window.cargarPlanes?.()">Planes</div>
+            <div class="footer-link" onclick="showPage('contacto')">Contacto</div>
+          </div>
+        </div>
+        <div>
+          <div class="footer-col-title">Ayuda</div>
+          <div class="footer-links">
+            <div class="footer-link">Preguntas frecuentes</div>
+            <div class="footer-link">Términos y condiciones</div>
+            <div class="footer-link">Política de privacidad</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2025 BuildZone. Todos los derechos reservados.</span>
+        <span>Compara · Elige · Construye</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- Página de productos -->
+<div class="page" id="page-productos">
+  <section class="section section-glow">
+    <div class="section-glow-bg"></div>
+    <div class="section-glow-grid"></div>
+    <div class="section-glow-content">
+      <div class="section-label">Productos</div>
+      <h2 class="section-title">Explora componentes destacados</h2>
+      <p class="section-sub">Filtra por categoría o busca el componente que necesitas.</p>
+
+      <div class="products-toolbar">
+        <input type="text" class="products-search" id="products-search" placeholder="🔍 Buscar por nombre o marca…">
+      </div>
+
+      <div class="categories-grid" id="products-categories" style="margin-top:2rem">
+        <div class="cat-card active" data-category="all"><span class="cat-icon">🧩</span><div class="cat-name">Todos</div></div>
+        <div class="cat-card" data-category="cpu"><span class="cat-icon">🕹️</span><div class="cat-name">Procesadores</div></div>
+        <div class="cat-card" data-category="gpu"><span class="cat-icon">🎮</span><div class="cat-name">Tarjetas Gráficas</div></div>
+        <div class="cat-card" data-category="ram"><span class="cat-icon">💾</span><div class="cat-name">Memorias RAM</div></div>
+        <div class="cat-card" data-category="almacenamiento"><span class="cat-icon">💿</span><div class="cat-name">Almacenamiento</div></div>
+        <div class="cat-card" data-category="placas-madre"><span class="cat-icon">🔌</span><div class="cat-name">Placas Madre</div></div>
+        <div class="cat-card" data-category="refrigeracion"><span class="cat-icon">❄️</span><div class="cat-name">Refrigeración</div></div>
+        <div class="cat-card" data-category="accesorios"><span class="cat-icon">🖱️</span><div class="cat-name">Accesorios</div></div>
+        <div class="cat-card" data-category="fuentes"><span class="cat-icon">🔋</span><div class="cat-name">Fuentes de Poder</div></div>
+        <div class="cat-card" data-category="monitores"><span class="cat-icon">🖥️</span><div class="cat-name">Monitores</div></div>
+      </div>
+
+      <div class="products-grid" id="products-grid" style="margin-top:2.5rem"></div>
+    </div>
+  </section>
+</div>
+
+<!-- Página del comparador -->
+<div class="page" id="page-comparador">
+  <section class="section section-glow">
+    <div class="section-glow-bg"></div>
+    <div class="section-glow-grid"></div>
+    <div class="section-glow-content">
+      <div class="section-label">Comparador</div>
+      <h2 class="section-title">Duelo de componentes</h2>
+      <p class="section-sub">Elige una categoría y compara 2 productos cara a cara.</p>
+
+      <div class="duel-category-bar">
+        <button class="duel-cat-btn active" data-category="cpu">🕹️ Procesadores</button>
+        <button class="duel-cat-btn" data-category="gpu">🎮 Tarjetas Gráficas</button>
+        <button class="duel-cat-btn" data-category="ram">💾 Memorias RAM</button>
+      </div>
+
+      <div class="duel-select-bar">
+        <div class="duel-select-group">
+          <label class="form-label">Jugador 1</label>
+          <select class="duel-select" id="duel-select-a"></select>
+        </div>
+        <div class="duel-vs">VS</div>
+        <div class="duel-select-group">
+          <label class="form-label">Jugador 2</label>
+          <select class="duel-select" id="duel-select-b"></select>
+        </div>
+      </div>
+
+      <div class="duel-arena" id="duel-arena">
+        <div class="duel-empty">Selecciona 2 productos para comenzar el duelo ⚔️</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Página de planes de suscripción -->
+<div class="page" id="page-planes">
+  <section class="section section-glow">
+    <div class="section-glow-bg"></div>
+    <div class="section-glow-grid"></div>
+    <div class="section-glow-content">
+      <div class="section-label">Planes</div>
+      <h2 class="section-title">Elige el plan que se ajuste a ti</h2>
+      <p class="section-sub">Desbloquea comparaciones ilimitadas y funciones exclusivas de BuildZone.</p>
+
+      <div class="plans-grid" id="plans-grid" style="margin-top:2.5rem">
+        <div class="plans-empty">Cargando planes…</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Página de mi cuenta -->
+<div class="page" id="page-cuenta">
+  <section class="section section-glow">
+    <div class="section-glow-bg"></div>
+    <div class="section-glow-grid"></div>
+    <div class="section-glow-content">
+      <div class="section-label">Mi cuenta</div>
+      <h2 class="section-title">Gestiona tu perfil y tu suscripción</h2>
+
+      <div class="account-tabs">
+        <button class="account-tab active" data-tab="perfil">Perfil</button>
+        <button class="account-tab" data-tab="seguridad">Seguridad</button>
+        <button class="account-tab" data-tab="suscripcion">Mi suscripción</button>
+      </div>
+
+      <div class="account-panel active" id="account-panel-perfil">
+        <form class="form-panel" id="perfil-form">
+          <div class="form-group">
+            <label class="form-label">Nombre de usuario</label>
+            <input type="text" class="form-input" id="perfil-username" disabled>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-input" id="perfil-nombre" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Apellido</label>
+            <input type="text" class="form-input" id="perfil-apellido" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Correo electrónico</label>
+            <input type="email" class="form-input" id="perfil-email" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        </form>
+      </div>
+
+      <div class="account-panel" id="account-panel-seguridad">
+        <form class="form-panel" id="password-form">
+          <div class="form-group">
+            <label class="form-label">Contraseña actual</label>
+            <input type="password" class="form-input" id="password-actual" required minlength="8">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraseña nueva</label>
+            <input type="password" class="form-input" id="password-nueva" required minlength="8">
+          </div>
+          <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
+        </form>
+      </div>
+
+      <div class="account-panel" id="account-panel-suscripcion">
+        <div id="suscripcion-actual" class="subscription-current">
+          <div class="plans-empty">Cargando tu suscripción…</div>
+        </div>
+        <h3 class="subsection-title">Historial de suscripciones</h3>
+        <div id="suscripcion-historial" class="subscription-history"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Panel de administración -->
+<div class="page" id="page-admin">
+  <section class="section section-glow">
+    <div class="section-glow-bg"></div>
+    <div class="section-glow-grid"></div>
+    <div class="section-glow-content">
+      <div class="section-label">Administración</div>
+      <h2 class="section-title">Panel de administrador</h2>
+
+      <div class="account-tabs">
+        <button class="account-tab active" data-admin-tab="usuarios">Usuarios</button>
+        <button class="account-tab" data-admin-tab="planes">Planes</button>
+        <button class="account-tab" data-admin-tab="suscripciones">Suscripciones</button>
+      </div>
+
+      <div class="account-panel active" id="admin-panel-usuarios">
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="admin-usuarios-table">
+            <thead>
+              <tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="account-panel" id="admin-panel-planes">
+        <div style="text-align:right;margin-bottom:1rem">
+          <button class="btn btn-primary" id="btn-nuevo-plan">+ Nuevo plan</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="admin-planes-table">
+            <thead>
+              <tr><th>Nombre</th><th>Precio</th><th>Duración</th><th>Estado</th><th>Acciones</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="account-panel" id="admin-panel-suscripciones">
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="admin-suscripciones-table">
+            <thead>
+              <tr><th>Usuario</th><th>Plan</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Modal de plan (crear / editar) usado por el panel de administración -->
+<div class="modal-overlay" id="plan-modal">
+  <div class="modal">
+    <div class="modal-close" data-close-plan-modal="true">✕</div>
+    <div class="modal-header">
+      <div class="modal-icon">⬡</div>
+      <div class="modal-title" id="plan-modal-title">Nuevo plan</div>
+    </div>
+    <form id="plan-form">
+      <input type="hidden" id="plan-id">
+      <div class="form-group">
+        <label class="form-label">Nombre del plan</label>
+        <input type="text" class="form-input" id="plan-nombre" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <input type="text" class="form-input" id="plan-descripcion">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Precio (COP)</label>
+        <input type="number" class="form-input" id="plan-precio" min="0" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duración (días)</label>
+        <input type="number" class="form-input" id="plan-duracion" min="1" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="plan-form-submit">Guardar plan</button>
+    </form>
+  </div>
+</div>
+
+<!-- Página de contacto -->
+<div class="page" id="page-contacto">
+  <section class="section section-glow">
+    <div class="section-glow-bg"></div>
+    <div class="section-glow-grid"></div>
+    <div class="section-glow-content">
+      <div class="section-label">Contacto</div>
+      <h2 class="section-title">Hablemos</h2>
+      <p class="section-sub">¿Tienes dudas o sugerencias? Escríbenos y te responderemos pronto.</p>
+
+      <form class="form-panel" id="contacto-form" style="max-width:480px;margin-top:2rem">
+        <div class="form-group">
+          <label class="form-label">Nombre</label>
+          <input type="text" class="form-input" placeholder="Tu nombre" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          <input type="email" class="form-input" placeholder="tucorreo@ejemplo.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mensaje</label>
+          <textarea class="form-input" rows="4" placeholder="Cuéntanos en qué podemos ayudarte" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Enviar mensaje</button>
+      </form>
+    </div>
+  </section>
+</div>
+
+<!-- Modal de inicio de sesión -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal">
+    <div class="modal-close" onclick="toggleLogin(false)">✕</div>
+    <div class="modal-header">
+      <div class="modal-icon">⬡</div>
+      <div class="modal-title">Bienvenido de nuevo</div>
+      <div class="modal-sub">Ingresa a tu cuenta de BuildZone</div>
+    </div>
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-input" id="login-email" placeholder="tucorreo@ejemplo.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" class="form-input" id="login-password" placeholder="Tu contraseña" required minlength="8">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Iniciar sesión</button>
+    </form>
+    <div class="modal-footer">¿No tienes cuenta? <span class="form-link" data-open-register="true">Regístrate</span></div>
+  </div>
+</div>
+
+<!-- Modal de registro -->
+<div class="modal-overlay" id="register-modal">
+  <div class="modal">
+    <div class="modal-close" onclick="toggleRegister(false)">✕</div>
+    <div class="modal-header">
+      <div class="modal-icon">⬡</div>
+      <div class="modal-title">Crea tu cuenta</div>
+      <div class="modal-sub">Únete a BuildZone y guarda tus comparaciones</div>
+    </div>
+    <form id="register-form">
+      <div class="form-group">
+        <label class="form-label">Nombre completo</label>
+        <input type="text" class="form-input" id="register-name" placeholder="Tu nombre" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-input" id="register-email" placeholder="tucorreo@ejemplo.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" class="form-input" id="register-password" placeholder="Mínimo 8 caracteres" required minlength="8">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmar contraseña</label>
+        <input type="password" class="form-input" id="register-password-confirm" placeholder="Repite tu contraseña" required minlength="8">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Crear cuenta</button>
+    </form>
+    <div class="modal-footer">¿Ya tienes cuenta? <span class="form-link" data-open-login="true">Inicia sesión</span></div>
+  </div>
+</div>
+
+<!-- Modal de artículo del blog -->
+<div class="modal-overlay" id="article-modal">
+  <div class="modal article-modal">
+    <div class="modal-close" onclick="toggleArticle(false)">✕</div>
+    <div class="modal-header">
+      <div class="modal-icon" id="article-icon">🖥️</div>
+      <div class="article-tag" id="article-tag">Guías</div>
+      <div class="modal-title" id="article-title">Título del artículo</div>
+    </div>
+    <div class="article-body" id="article-body"></div>
+  </div>
+</div>
+
+<script src="ui.js"></script>
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script src="planes.js"></script>
+<script src="cuenta.js"></script>
+<script src="admin.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

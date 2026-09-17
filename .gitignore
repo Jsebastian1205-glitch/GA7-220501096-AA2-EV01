@@ -1,0 +1,17 @@
+# Backend Java (Maven/NetBeans)
+backend-java/target/
+*.class
+*.log
+nbproject/private/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Node (por si el front-end usa dependencias)
+node_modules/
+
+# Sistema
+Thumbs.db
+.DS_Store
