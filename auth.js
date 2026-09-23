@@ -46,13 +46,13 @@ function actualizarNavSegunSesion() {
     <div class="user-menu">
       <button class="user-menu-btn" id="user-menu-btn" type="button">
         <span class="user-avatar">${inicial}</span>
-        <span class="user-name">${usuarioActual.username}</span>
+        <span class="user-name">${escaparHtml(usuarioActual.username)}</span>
         <span class="user-caret">▾</span>
       </button>
       <div class="user-dropdown" id="user-dropdown">
         <div class="user-dropdown-header">
-          <div class="user-dropdown-name">${usuarioActual.nombre} ${usuarioActual.apellido}</div>
-          <div class="user-dropdown-email">${usuarioActual.email}</div>
+          <div class="user-dropdown-name">${escaparHtml(usuarioActual.nombre)} ${escaparHtml(usuarioActual.apellido)}</div>
+          <div class="user-dropdown-email">${escaparHtml(usuarioActual.email)}</div>
         </div>
         <div class="user-dropdown-item" data-action="cuenta">👤 Mi cuenta</div>
         ${esAdmin() ? '<div class="user-dropdown-item" data-action="admin">🛠️ Panel admin</div>' : ''}
@@ -109,11 +109,23 @@ async function manejarEnvioRegistro(event) {
   const partes = nombreCompleto.split(/\s+/).filter(Boolean);
   const nombre = partes[0] || nombreCompleto;
   const apellido = partes.slice(1).join(' ') || partes[0] || nombreCompleto;
-  const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '') || `usuario${Date.now()}`;
+  // El backend exige entre 3 y 40 caracteres [a-z0-9._-] para el username.
+  let username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 34);
+  if (username.length < 3) username = `usuario${Date.now()}`.slice(0, 20);
 
   try {
     if (boton) boton.disabled = true;
-    const respuesta = await registrarUsuario({ nombre, apellido, username, email, password });
+    let respuesta;
+    try {
+      respuesta = await registrarUsuario({ nombre, apellido, username, email, password });
+    } catch (error) {
+      // Si el username derivado del correo ya existe (p. ej. ana@gmail.com
+      // y ana@hotmail.com), se reintenta una vez con un sufijo numérico.
+      const usernameOcupado = error.status === 409 && /nombre de usuario/i.test(error.message);
+      if (!usernameOcupado) throw error;
+      const alterno = `${username}${Math.floor(100 + Math.random() * 900)}`;
+      respuesta = await registrarUsuario({ nombre, apellido, username: alterno, email, password });
+    }
     guardarSesion(respuesta.token, respuesta.usuario);
     usuarioActual = respuesta.usuario;
     actualizarNavSegunSesion();

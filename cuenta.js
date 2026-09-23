@@ -57,7 +57,7 @@ function renderizarSuscripcionActual(suscripcion) {
   contenedor.innerHTML = `
     <div class="subscription-card">
       <div class="subscription-card-info">
-        <div class="subscription-card-plan">${suscripcion.plan.nombre}</div>
+        <div class="subscription-card-plan">${escaparHtml(suscripcion.plan.nombre)}</div>
         <div class="subscription-card-fechas">Desde ${formatearFecha(suscripcion.fechaInicio)} hasta ${formatearFecha(suscripcion.fechaFin)}</div>
       </div>
       <button class="btn btn-outline" id="btn-cancelar-suscripcion" data-suscripcion-id="${suscripcion.id}">Cancelar suscripción</button>
@@ -83,7 +83,7 @@ function renderizarHistorialSuscripciones(historial) {
               const estado = ETIQUETAS_ESTADO_SUSCRIPCION[s.estado] || { texto: s.estado, clase: 'badge-gris' };
               return `
                 <tr>
-                  <td>${s.plan.nombre}</td>
+                  <td>${escaparHtml(s.plan.nombre)}</td>
                   <td>${formatearFecha(s.fechaInicio)}</td>
                   <td>${formatearFecha(s.fechaFin)}</td>
                   <td><span class="badge ${estado.clase}">${estado.texto}</span></td>
@@ -111,7 +111,7 @@ async function cargarCuenta() {
     renderizarSuscripcionActual(suscripcionActiva);
     renderizarHistorialSuscripciones(historial);
   } catch (error) {
-    if (actualEl) actualEl.innerHTML = `<div class="plans-empty">No se pudo cargar tu suscripción: ${error.message}</div>`;
+    if (actualEl) actualEl.innerHTML = `<div class="plans-empty">No se pudo cargar tu suscripción: ${escaparHtml(error.message)}</div>`;
   }
 }
 

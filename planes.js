@@ -15,7 +15,7 @@ async function cargarPlanes() {
   try {
     planes = await listarPlanesActivos();
   } catch (error) {
-    grid.innerHTML = `<div class="plans-empty">No se pudieron cargar los planes: ${error.message}</div>`;
+    grid.innerHTML = `<div class="plans-empty">No se pudieron cargar los planes: ${escaparHtml(error.message)}</div>`;
     return;
   }
 
@@ -46,9 +46,9 @@ function renderizarPlanes(planes, suscripcionActiva) {
       return `
         <div class="plan-card ${esActual ? 'plan-card-current' : ''}">
           ${esActual ? '<div class="plan-card-badge">⭐ Tu plan actual</div>' : ''}
-          <div class="plan-card-name">${plan.nombre}</div>
+          <div class="plan-card-name">${escaparHtml(plan.nombre)}</div>
           <div class="plan-card-price">${formatearMoneda(plan.precio)}<span class="plan-card-period">/${plan.duracionDias} días</span></div>
-          <div class="plan-card-desc">${plan.descripcion || ''}</div>
+          <div class="plan-card-desc">${escaparHtml(plan.descripcion || '')}</div>
           <button
             class="btn ${esActual ? 'btn-outline' : 'btn-primary'} btn-full"
             data-plan-id="${plan.id}"

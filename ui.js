@@ -14,6 +14,18 @@ const FORMATEADOR_MONEDA = new Intl.NumberFormat('es-CO', {
   maximumFractionDigits: 0,
 });
 
+const ENTIDADES_HTML = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+/**
+ * Escapa un texto antes de insertarlo con innerHTML. Todo dato que venga
+ * del usuario o del backend (nombres, correos, descripciones, mensajes de
+ * error) debe pasar por aquí para evitar inyección de HTML/JavaScript (XSS).
+ */
+function escaparHtml(valor) {
+  if (valor === null || valor === undefined) return '';
+  return String(valor).replace(/[&<>"']/g, (c) => ENTIDADES_HTML[c]);
+}
+
 /** Formatea un número como precio en pesos colombianos, p. ej. $29.900. */
 function formatearMoneda(valor) {
   const numero = Number(valor);

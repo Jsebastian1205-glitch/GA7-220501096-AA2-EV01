@@ -40,8 +40,8 @@ function renderizarUsuarios(usuarios) {
       const nuevoEstado = u.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
       return `
         <tr>
-          <td>${u.username}<br><span class="table-subtext">${u.nombre} ${u.apellido}</span></td>
-          <td>${u.email}</td>
+          <td>${escaparHtml(u.username)}<br><span class="table-subtext">${escaparHtml(u.nombre)} ${escaparHtml(u.apellido)}</span></td>
+          <td>${escaparHtml(u.email)}</td>
           <td><span class="badge ${u.rol === 'ADMIN' ? 'badge-purple' : 'badge-gris'}">${u.rol}</span></td>
           <td><span class="badge ${ETIQUETAS_ESTADO_USUARIO[u.estado] || 'badge-gris'}">${u.estado}</span></td>
           <td class="admin-table-actions">
@@ -81,7 +81,7 @@ async function cargarUsuarios() {
     usuariosCache = await listarUsuarios();
     renderizarUsuarios(usuariosCache);
   } catch (error) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="5">Error al cargar usuarios: ${error.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5">Error al cargar usuarios: ${escaparHtml(error.message)}</td></tr>`;
   }
 }
 
@@ -100,7 +100,7 @@ function renderizarPlanesAdmin(planes) {
     .map(
       (p) => `
         <tr>
-          <td>${p.nombre}</td>
+          <td>${escaparHtml(p.nombre)}</td>
           <td>${formatearMoneda(p.precio)}</td>
           <td>${p.duracionDias} días</td>
           <td><span class="badge ${p.activo ? 'badge-verde' : 'badge-rojo'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
@@ -120,7 +120,7 @@ async function cargarPlanesAdmin() {
     planesAdminCache = await listarTodosLosPlanes();
     renderizarPlanesAdmin(planesAdminCache);
   } catch (error) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="5">Error al cargar planes: ${error.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5">Error al cargar planes: ${escaparHtml(error.message)}</td></tr>`;
   }
 }
 
@@ -231,8 +231,8 @@ function renderizarSuscripcionesAdmin(suscripciones) {
       const badge = ETIQUETAS_ESTADO_SUSCRIPCION_ADMIN[s.estado] || 'badge-gris';
       return `
         <tr>
-          <td>${usuario ? usuario.username : `#${s.usuarioId}`}</td>
-          <td>${s.plan.nombre}</td>
+          <td>${usuario ? escaparHtml(usuario.username) : `#${s.usuarioId}`}</td>
+          <td>${escaparHtml(s.plan.nombre)}</td>
           <td>${s.fechaInicio}</td>
           <td>${s.fechaFin}</td>
           <td><span class="badge ${badge}">${s.estado}</span></td>
@@ -248,7 +248,7 @@ async function cargarSuscripcionesAdmin() {
     const suscripciones = await listarTodasLasSuscripciones();
     renderizarSuscripcionesAdmin(suscripciones);
   } catch (error) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="5">Error al cargar suscripciones: ${error.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5">Error al cargar suscripciones: ${escaparHtml(error.message)}</td></tr>`;
   }
 }
 
@@ -256,7 +256,11 @@ async function cargarSuscripcionesAdmin() {
 
 async function cargarAdmin() {
   await cargarUsuarios();
-  await Promise.all([cargarPlanesAdmin(), cargarSuscripcionesAdmin()]);
+  await Promise.all([
+    cargarPlanesAdmin(),
+    cargarSuscripcionesAdmin(),
+    window.cargarCatalogoAdmin ? window.cargarCatalogoAdmin() : Promise.resolve(),
+  ]);
 }
 
 function inicializarAdmin() {
