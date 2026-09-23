@@ -24,6 +24,15 @@ public class Main {
     private static final BrandDAO brandDAO = new BrandDAO();
     private static final CategoryDAO categoryDAO = new CategoryDAO();
 
+    /**
+     * Muestra el menu principal en bucle hasta que el usuario elige
+     * salir (opcion 0). Cada opcion delega en un submenu especifico
+     * (productos, marcas o categorias) que a su vez llama a los
+     * metodos de insercion/consulta/actualizacion/eliminacion del
+     * DAO correspondiente.
+     *
+     * @param args argumentos de linea de comandos (no se usan)
+     */
     public static void main(String[] args) {
 
         int option;
@@ -53,6 +62,7 @@ public class Main {
 
     // ================= PRODUCTOS =================
 
+    /** Submenu con las cuatro operaciones CRUD sobre productos. */
     private static void productMenu() {
 
         int option;
@@ -80,6 +90,12 @@ public class Main {
         } while (option != 0);
     }
 
+    /**
+     * Pide por consola los datos de un producto nuevo y lo inserta
+     * mediante {@link ProductDAO#insertProduct}.
+     * Nota: id_marca e id_categoria deben corresponder a registros
+     * existentes en las tablas marca y categoria, por la llave foranea.
+     */
     private static void insertProduct() {
 
         System.out.print("ID de la marca: ");
@@ -106,11 +122,19 @@ public class Main {
                 : "No se pudo insertar el producto.");
     }
 
+    /**
+     * Actualiza un producto existente: primero consulta y muestra sus
+     * datos actuales ({@link ProductDAO#getProductById}) para que el
+     * usuario sepa que esta editando, y luego guarda los nuevos
+     * valores con {@link ProductDAO#updateProduct}.
+     */
     private static void updateProduct() {
 
         System.out.print("ID del producto a actualizar: ");
         int idProduct = readInt();
 
+        // Se consulta primero el producto para mostrarle al usuario
+        // los valores actuales antes de pedirle los nuevos.
         Product current = productDAO.getProductById(idProduct);
 
         if (current == null) {
@@ -144,6 +168,7 @@ public class Main {
                 : "No se pudo actualizar el producto.");
     }
 
+    /** Elimina un producto por id mediante {@link ProductDAO#deleteProduct}. */
     private static void deleteProduct() {
 
         System.out.print("ID del producto a eliminar: ");
@@ -158,6 +183,7 @@ public class Main {
 
     // ================= MARCAS =================
 
+    /** Submenu con las cuatro operaciones CRUD sobre marcas. */
     private static void brandMenu() {
 
         int option;
@@ -185,6 +211,7 @@ public class Main {
         } while (option != 0);
     }
 
+    /** Pide los datos de una marca nueva y la inserta con {@link BrandDAO#insertBrand}. */
     private static void insertBrand() {
 
         System.out.print("Nombre de la marca: ");
@@ -200,6 +227,7 @@ public class Main {
                 : "No se pudo insertar la marca.");
     }
 
+    /** Lista todas las marcas con {@link BrandDAO#getAllBrands}. */
     private static void listBrands() {
 
         List<Brand> brands = brandDAO.getAllBrands();
@@ -214,6 +242,7 @@ public class Main {
         }
     }
 
+    /** Pide un id y los nuevos datos, y actualiza con {@link BrandDAO#updateBrand}. */
     private static void updateBrand() {
 
         System.out.print("ID de la marca a actualizar: ");
@@ -232,6 +261,7 @@ public class Main {
                 : "No se pudo actualizar la marca (verifique el ID).");
     }
 
+    /** Elimina una marca por id mediante {@link BrandDAO#deleteBrand}. */
     private static void deleteBrand() {
 
         System.out.print("ID de la marca a eliminar: ");
@@ -246,6 +276,7 @@ public class Main {
 
     // ================= CATEGORIAS =================
 
+    /** Submenu con las cuatro operaciones CRUD sobre categorias. */
     private static void categoryMenu() {
 
         int option;
@@ -273,6 +304,7 @@ public class Main {
         } while (option != 0);
     }
 
+    /** Pide los datos de una categoria nueva y la inserta con {@link CategoryDAO#insertCategory}. */
     private static void insertCategory() {
 
         System.out.print("Nombre de la categoria: ");
@@ -288,6 +320,7 @@ public class Main {
                 : "No se pudo insertar la categoria.");
     }
 
+    /** Lista todas las categorias con {@link CategoryDAO#getAllCategories}. */
     private static void listCategories() {
 
         List<Category> categories = categoryDAO.getAllCategories();
@@ -302,6 +335,7 @@ public class Main {
         }
     }
 
+    /** Pide un id y los nuevos datos, y actualiza con {@link CategoryDAO#updateCategory}. */
     private static void updateCategory() {
 
         System.out.print("ID de la categoria a actualizar: ");
@@ -320,6 +354,7 @@ public class Main {
                 : "No se pudo actualizar la categoria (verifique el ID).");
     }
 
+    /** Elimina una categoria por id mediante {@link CategoryDAO#deleteCategory}. */
     private static void deleteCategory() {
 
         System.out.print("ID de la categoria a eliminar: ");

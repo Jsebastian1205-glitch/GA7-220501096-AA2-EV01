@@ -22,10 +22,25 @@ public class DatabaseConnection {
 
     private static final String PASSWORD = "";
 
+    /**
+     * Constructor privado: esta clase solo expone metodos estaticos
+     * (es una clase de utilidad) y no tiene sentido crear instancias
+     * de ella.
+     */
     private DatabaseConnection() {
-        // Clase de utilidad: no se debe instanciar.
     }
 
+    /**
+     * Abre y devuelve una nueva conexion JDBC hacia la base de datos.
+     * Quien invoque este metodo es responsable de cerrar la conexion
+     * (idealmente con try-with-resources), tal como hacen los DAO de
+     * este proyecto.
+     *
+     * @return una conexion JDBC lista para usar
+     * @throws SQLException si el servidor MySQL no esta disponible,
+     *                       las credenciales son incorrectas, o la
+     *                       base de datos "buildzone" no existe
+     */
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }

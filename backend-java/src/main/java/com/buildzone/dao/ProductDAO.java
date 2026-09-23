@@ -11,15 +11,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Acceso a datos (DAO) para la entidad Product.
- * Implementa las cuatro operaciones basicas sobre la tabla "producto":
- * insertar, consultar, actualizar y eliminar (CRUD), usando JDBC.
+ * Acceso a datos (DAO - Data Access Object) para la entidad Product.
+ * <p>
+ * Implementa las cuatro operaciones basicas de persistencia (CRUD) sobre
+ * la tabla "producto" de la base de datos, usando JDBC puro: sentencias
+ * {@link PreparedStatement} (para evitar inyeccion SQL) y bloques
+ * try-with-resources (para que la conexion, el statement y el result set
+ * se cierren automaticamente, incluso si ocurre un error).
+ * <p>
+ * Cada metodo abre su propia conexion a traves de
+ * {@link DatabaseConnection#getConnection()} y la libera al terminar;
+ * no se mantienen conexiones abiertas entre llamadas.
  */
 public class ProductDAO {
 
-    // INSERTAR
+    /**
+     * Inserta un nuevo producto en la base de datos.
+     * El id_producto no se envia: la columna es AUTO_INCREMENT y la
+     * base de datos lo genera automaticamente.
+     *
+     * @param product objeto con los datos del producto a guardar
+     *                (marca, categoria, nombre, descripcion e imagen)
+     * @return true si la insercion afecto al menos una fila; false si
+     *         ocurrio un error (por ejemplo, una marca o categoria
+     *         inexistente que viola la llave foranea)
+     */
     public boolean insertProduct(Product product) {
 
+        // Sentencia parametrizada: los "?" se reemplazan mas abajo con
+        // setInt/setString, nunca concatenando texto (evita inyeccion SQL).
         String sql = """
                 INSERT INTO producto
                 (id_marca, id_categoria, nombre, descripcion, imagen)
@@ -31,6 +51,8 @@ public class ProductDAO {
                 PreparedStatement statement = connection.prepareStatement(sql)
         ) {
 
+            // El orden de los setX debe coincidir con el orden de los "?"
+            // en la sentencia SQL de arriba.
             statement.setInt(1, product.getIdBrand());
             statement.setInt(2, product.getIdCategory());
             statement.setString(3, product.getName());
@@ -43,6 +65,8 @@ public class ProductDAO {
 
         } catch (SQLException e) {
 
+            // Se informa el error por consola y se reporta el fallo a
+            // quien llamo al metodo (el menu decide como mostrarlo).
             System.out.println("Error al insertar el producto.");
             e.printStackTrace();
 
@@ -50,7 +74,12 @@ public class ProductDAO {
         }
     }
 
-    // CONSULTAR (todos, con nombre de marca y categoria)
+    /**
+     * Consulta todos los productos registrados.
+     *
+     * @return lista con todos los productos (vacia si no hay registros
+     *         o si ocurrio un error de conexion/consulta)
+     */
     public List<Product> getAllProducts() {
 
         List<Product> products = new ArrayList<>();
@@ -68,6 +97,9 @@ public class ProductDAO {
                 ResultSet resultSet = statement.executeQuery()
         ) {
 
+            // Se recorre el ResultSet fila por fila y cada fila se
+            // convierte en un objeto Product para no exponer JDBC
+            // fuera de la capa DAO.
             while (resultSet.next()) {
 
                 Product product = new Product(
@@ -91,7 +123,15 @@ public class ProductDAO {
         return products;
     }
 
-    // CONSULTAR (uno solo, por id, para precargar datos antes de actualizar)
+    /**
+     * Busca un unico producto por su identificador.
+     * Se usa, por ejemplo, para precargar los datos actuales antes de
+     * mostrarlos al usuario en la opcion "Actualizar producto" del menu.
+     *
+     * @param idProduct identificador del producto (id_producto)
+     * @return el producto encontrado, o null si no existe ningun
+     *         producto con ese id (o si ocurrio un error de consulta)
+     */
     public Product getProductById(int idProduct) {
 
         String sql = """
@@ -110,6 +150,8 @@ public class ProductDAO {
 
             try (ResultSet resultSet = statement.executeQuery()) {
 
+                // Como id_producto es llave primaria, a lo sumo hay una
+                // fila: basta con comprobar si existe un primer registro.
                 if (resultSet.next()) {
                     return new Product(
                             resultSet.getInt("id_producto"),
@@ -131,7 +173,11 @@ public class ProductDAO {
         return null;
     }
 
-    // CONSULTAR (listado detallado con nombre de marca y categoria, para reportes)
+    /**
+     * Imprime en consola el listado de productos con el nombre de su
+     * marca y categoria (en vez del id numerico), usando un INNER JOIN.
+     * Pensado como reporte legible para el usuario final del menu.
+     */
     public void printProductsWithDetails() {
 
         String sql = """
@@ -172,7 +218,16 @@ public class ProductDAO {
         }
     }
 
-    // ACTUALIZAR
+    /**
+     * Actualiza los datos de un producto existente.
+     * Se actualizan todos los campos a la vez, identificando la fila
+     * por id_producto.
+     *
+     * @param product producto con el id_producto del registro a
+     *                modificar y los nuevos valores de sus campos
+     * @return true si se actualizo al menos una fila; false si no
+     *         existia un producto con ese id o si ocurrio un error
+     */
     public boolean updateProduct(Product product) {
 
         String sql = """
@@ -197,6 +252,8 @@ public class ProductDAO {
             statement.setString(5, product.getImage());
             statement.setInt(6, product.getIdProduct());
 
+            // executeUpdate devuelve el numero de filas afectadas:
+            // 0 significa que no existia una fila con ese id_producto.
             int rows = statement.executeUpdate();
 
             return rows > 0;
@@ -210,7 +267,13 @@ public class ProductDAO {
         }
     }
 
-    // ELIMINAR
+    /**
+     * Elimina un producto por su identificador.
+     *
+     * @param idProduct identificador del producto a eliminar
+     * @return true si se elimino al menos una fila; false si no
+     *         existia un producto con ese id o si ocurrio un error
+     */
     public boolean deleteProduct(int idProduct) {
 
         String sql = """

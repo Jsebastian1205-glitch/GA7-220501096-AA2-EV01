@@ -13,11 +13,20 @@ import java.util.List;
 /**
  * Acceso a datos (DAO) para la entidad Category.
  * Implementa las cuatro operaciones basicas sobre la tabla "categoria":
- * insertar, consultar, actualizar y eliminar (CRUD), usando JDBC.
+ * insertar, consultar, actualizar y eliminar (CRUD), usando JDBC puro
+ * (sentencias {@link PreparedStatement} y try-with-resources).
  */
 public class CategoryDAO {
 
-    // INSERTAR
+    /**
+     * Inserta una nueva categoria.
+     *
+     * @param category categoria a guardar (nombre y descripcion); el
+     *                 nombre debe ser unico segun la restriccion de
+     *                 la tabla
+     * @return true si se inserto correctamente; false si ocurrio un
+     *         error (por ejemplo, un nombre repetido)
+     */
     public boolean insertCategory(Category category) {
 
         String sql = "INSERT INTO categoria (nombre, descripcion) VALUES (?, ?)";
@@ -42,7 +51,12 @@ public class CategoryDAO {
         }
     }
 
-    // CONSULTAR
+    /**
+     * Consulta todas las categorias registradas.
+     *
+     * @return lista de categorias (vacia si no hay registros o si
+     *         ocurrio un error de conexion/consulta)
+     */
     public List<Category> getAllCategories() {
 
         List<Category> categories = new ArrayList<>();
@@ -72,7 +86,14 @@ public class CategoryDAO {
         return categories;
     }
 
-    // ACTUALIZAR
+    /**
+     * Actualiza el nombre y la descripcion de una categoria existente.
+     *
+     * @param category categoria con el id_categoria a modificar y sus
+     *                 nuevos datos
+     * @return true si se actualizo al menos una fila; false si no
+     *         existia una categoria con ese id o si ocurrio un error
+     */
     public boolean updateCategory(Category category) {
 
         String sql = "UPDATE categoria SET nombre = ?, descripcion = ? WHERE id_categoria = ?";
@@ -99,7 +120,17 @@ public class CategoryDAO {
         }
     }
 
-    // ELIMINAR
+    /**
+     * Elimina una categoria por su identificador.
+     * Nota: si la categoria tiene productos asociados, la base de
+     * datos rechazara la eliminacion por la llave foranea
+     * fk_producto_categoria, y este metodo devolvera false.
+     *
+     * @param idCategory identificador de la categoria a eliminar
+     * @return true si se elimino al menos una fila; false si no
+     *         existia, si tiene productos asociados, o si ocurrio
+     *         otro error
+     */
     public boolean deleteCategory(int idCategory) {
 
         String sql = "DELETE FROM categoria WHERE id_categoria = ?";
