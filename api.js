@@ -218,3 +218,38 @@ function cancelarSuscripcion(id) {
 function listarTodasLasSuscripciones() {
   return peticionApi('/suscripciones');
 }
+
+// ── Catálogo (/api/productos, /api/marcas, /api/categorias) ──
+// Las consultas (GET) son públicas; crear/editar/eliminar exige rol ADMIN.
+
+function listarProductos() {
+  return peticionApi('/productos', { conAuth: false });
+}
+
+function crearProducto(datos) {
+  return peticionApi('/productos', { method: 'POST', body: datos });
+}
+
+function actualizarProducto(id, datos) {
+  return peticionApi(`/productos/${id}`, { method: 'PUT', body: datos });
+}
+
+function eliminarProducto(id) {
+  return peticionApi(`/productos/${id}`, { method: 'DELETE' });
+}
+
+function listarMarcas() {
+  return peticionApi('/marcas', { conAuth: false });
+}
+
+function crearMarca({ nombre, descripcion }) {
+  return peticionApi('/marcas', { method: 'POST', body: { nombre, descripcion } });
+}
+
+function listarCategorias() {
+  return peticionApi('/categorias', { conAuth: false });
+}
+
+function crearCategoria({ nombre, descripcion }) {
+  return peticionApi('/categorias', { method: 'POST', body: { nombre, descripcion } });
+}

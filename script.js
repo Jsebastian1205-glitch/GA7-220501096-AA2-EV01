@@ -74,7 +74,10 @@ function openArticle(articleId) {
   toggleArticle(true);
 }
 
-// Datos de prueba de productos (más adelante se conectarán a la base de datos)
+// Datos locales de productos. Al cargar la página, catalogo.js los
+// reemplaza por los productos reales de la API (GET /api/productos) y usa
+// estos como referencia de precio y estadísticas; si el backend no está
+// disponible, la página sigue funcionando con estos datos.
 const PRODUCTS = [
   { id: 'i5-14600k', category: 'cpu', brand: 'Intel', name: 'Core i5-14600K', price: 320000, icon: '🕹️',
     stats: { potencia: 78, eficiencia: 70, valor: 88, popularidad: 90 } },
@@ -127,6 +130,11 @@ const ARTICLES = {
     body: 'AMD suele destacar en relación precio-rendimiento para gaming, mientras que Intel mantiene ventaja en tareas de un solo núcleo. Usa el Comparador de BuildZone para ver las estadísticas lado a lado antes de decidir.' },
 };
 
+/** Precio en COP, o un texto si el producto aún no tiene precio registrado. */
+function formatProductPrice(price) {
+  return typeof price === 'number' ? `$${price.toLocaleString('es-CO')}` : 'Precio por confirmar';
+}
+
 let currentDuelCategory = 'cpu';
 let currentProductCategory = 'all';
 let currentProductSearch = '';
@@ -153,9 +161,10 @@ function populateDuelSelects() {
   const selectB = document.getElementById('duel-select-b');
   if (!selectA || !selectB) return;
 
-  const categoryProducts = PRODUCTS.filter((p) => p.category === currentDuelCategory);
+  // Solo se pueden enfrentar productos que tienen estadísticas de rendimiento.
+  const categoryProducts = PRODUCTS.filter((p) => p.category === currentDuelCategory && p.stats);
   const options = ['<option value="">Selecciona un producto…</option>']
-    .concat(categoryProducts.map((p) => `<option value="${p.id}">${p.brand} ${p.name}</option>`))
+    .concat(categoryProducts.map((p) => `<option value="${escaparHtml(p.id)}">${escaparHtml(p.brand)} ${escaparHtml(p.name)}</option>`))
     .join('');
 
   selectA.innerHTML = options;
@@ -177,9 +186,9 @@ function buildDuelCard(product, opponent) {
     <div class="duel-card">
       <div class="duel-card-badge">${CATEGORY_LABELS[product.category]}</div>
       <div class="duel-card-icon">${product.icon}</div>
-      <div class="duel-card-brand">${product.brand}</div>
-      <div class="duel-card-name">${product.name}</div>
-      <div class="duel-card-price">$${product.price.toLocaleString('es-CO')}</div>
+      <div class="duel-card-brand">${escaparHtml(product.brand)}</div>
+      <div class="duel-card-name">${escaparHtml(product.name)}</div>
+      <div class="duel-card-price">${formatProductPrice(product.price)}</div>
       <div class="duel-card-stats">${statsHtml}</div>
       <div class="duel-card-seal">⬡ BuildZone</div>
     </div>`;
@@ -242,9 +251,10 @@ function renderProductsGrid() {
   grid.innerHTML = filtered.map((p) => `
     <div class="product-card">
       <div class="product-card-icon">${p.icon}</div>
-      <div class="product-card-brand">${p.brand}</div>
-      <div class="product-card-name">${p.name}</div>
-      <div class="product-card-price">$${p.price.toLocaleString('es-CO')}</div>
+      <div class="product-card-brand">${escaparHtml(p.brand)}</div>
+      <div class="product-card-name">${escaparHtml(p.name)}</div>
+      ${p.description ? `<div class="product-card-desc">${escaparHtml(p.description)}</div>` : ''}
+      <div class="product-card-price">${formatProductPrice(p.price)}</div>
     </div>
   `).join('');
 }
@@ -348,6 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.inicializarPlanes === 'function') window.inicializarPlanes();
   if (typeof window.inicializarCuenta === 'function') window.inicializarCuenta();
   if (typeof window.inicializarAdmin === 'function') window.inicializarAdmin();
+  if (typeof window.inicializarCatalogo === 'function') window.inicializarCatalogo();
 
   showPage('inicio');
 });

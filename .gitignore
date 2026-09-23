@@ -10,7 +10,7 @@ nbproject/private/
 *.iml
 
 # Node (por si el front-end usa dependencias)
-node_modules/
+node_modules
 
 # Sistema
 Thumbs.db

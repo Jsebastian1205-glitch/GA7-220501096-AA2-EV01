@@ -4,16 +4,20 @@
 // tal como se documentó al leer los controladores/DTOs reales del
 // backend en pc-compare-gestion-usuarios.
 //
-// Sirve /home/claude/buildzone-site como estático en localhost:8010 y
-// intercepta todas las llamadas a http://localhost:8080/api/** con
-// page.route(), igual que se hizo para validar el frontend React.
+// Sirve la carpeta del proyecto (la carpeta padre de validacion/) como
+// estático en localhost:8010 e intercepta todas las llamadas a
+// http://localhost:8080/api/** con context.route().
+//
+// Incluye el módulo de catálogo (productos, marcas, categorías) con los
+// mismos DTOs de ProductoResponse/MarcaResponse/CategoriaResponse.
 
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
-const SITE_DIR = '/home/claude/buildzone-site';
+const SITE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SITE_PORT = 8010;
 
 const MIME = {
@@ -47,7 +51,40 @@ let siguienteId = 100;
 const usuarios = new Map([
   [1, { id: 1, nombre: 'Ana', apellido: 'Gómez', username: 'ana.gomez', email: 'ana@buildzone.com', rol: 'USUARIO', estado: 'ACTIVO', password: 'Secreta123', fechaRegistro: '2026-01-10T10:00:00' }],
   [2, { id: 2, nombre: 'Root', apellido: 'Admin', username: 'admin', email: 'admin@buildzone.com', rol: 'ADMIN', estado: 'ACTIVO', password: 'Admin1234', fechaRegistro: '2026-01-01T09:00:00' }],
+  // Usuario con HTML en el nombre: el panel admin debe mostrarlo como texto (anti-XSS).
+  [3, { id: 3, nombre: '<img src=x id=xss-inyectado>', apellido: 'Malicioso', username: 'hacker', email: 'hacker@test.com', rol: 'USUARIO', estado: 'ACTIVO', password: 'Hacker123', fechaRegistro: '2026-02-01T09:00:00' }],
 ]);
+
+// ── Catálogo simulado (mismo contenido que CatalogoDemoConfig del perfil dev) ──
+const categorias = new Map([
+  [1, { idCategoria: 1, nombre: 'Procesador', descripcion: null }],
+  [2, { idCategoria: 2, nombre: 'Tarjeta Grafica', descripcion: null }],
+  [3, { idCategoria: 3, nombre: 'Memoria RAM', descripcion: null }],
+]);
+const marcas = new Map(
+  ['Intel', 'AMD', 'NVIDIA', 'Kingston', 'Corsair', 'G.Skill'].map((nombre, i) => [i + 1, { idMarca: i + 1, nombre, descripcion: null }])
+);
+const idMarca = (nombre) => [...marcas.values()].find((m) => m.nombre === nombre).idMarca;
+const productos = new Map(
+  [
+    [1, 'Intel', 'Core i5-14600K'], [1, 'Intel', 'Core i7-14700K'], [1, 'Intel', 'Core i9-14900K'],
+    [1, 'AMD', 'Ryzen 5 7600X'], [1, 'AMD', 'Ryzen 7 7700X'],
+    [2, 'NVIDIA', 'RTX 4060'], [2, 'NVIDIA', 'RTX 4070'], [2, 'NVIDIA', 'RTX 4070 Ti'],
+    [2, 'AMD', 'Radeon RX 7600'], [2, 'AMD', 'Radeon RX 7800 XT'],
+    [3, 'Kingston', 'Fury Beast 16GB 3200MHz'], [3, 'Corsair', 'Vengeance 32GB 6000MHz'],
+    [3, 'G.Skill', 'Trident Z5 32GB 6400MHz'], [3, 'Corsair', 'Dominator Platinum 64GB 5600MHz'],
+  ].map(([idCategoria, marca, nombre], i) => [
+    i + 1,
+    { idProducto: i + 1, nombre, descripcion: `Descripcion API de ${nombre}`, imagen: null, idMarca: idMarca(marca), idCategoria },
+  ])
+);
+function respuestaProducto(p) {
+  return {
+    ...p,
+    nombreMarca: marcas.get(p.idMarca).nombre,
+    nombreCategoria: categorias.get(p.idCategoria).nombre,
+  };
+}
 const planes = new Map([
   [1, { id: 1, nombre: 'Gratuito', descripcion: 'Acceso básico al comparador.', precio: 0, duracionDias: 3650, activo: true }],
   [2, { id: 2, nombre: 'Premium', descripcion: 'Comparaciones ilimitadas y soporte prioritario.', precio: 29900, duracionDias: 30, activo: true }],
@@ -82,6 +119,43 @@ async function manejarApi(route) {
 
   const json = (status, data) => route.fulfill({ status, contentType: 'application/json', body: data === undefined ? '' : JSON.stringify(data) });
   const error = (status, mensaje, detalles) => json(status, { timestamp: new Date().toISOString(), status, error: 'Error', mensaje, ruta, detalles });
+
+  // ── Catálogo: GET público, escritura solo ADMIN ──
+  if (ruta.startsWith('/productos') || ruta.startsWith('/marcas') || ruta.startsWith('/categorias')) {
+    const lista = ruta.startsWith('/productos') ? productos : ruta.startsWith('/marcas') ? marcas : categorias;
+    const campoId = ruta.startsWith('/productos') ? 'idProducto' : ruta.startsWith('/marcas') ? 'idMarca' : 'idCategoria';
+    const aDto = ruta.startsWith('/productos') ? respuestaProducto : (x) => x;
+    const matchId = ruta.match(/^\/\w+\/(\d+)$/);
+
+    if (metodo === 'GET' && !matchId) return json(200, [...lista.values()].map(aDto));
+    if (metodo === 'GET' && matchId) {
+      const item = lista.get(Number(matchId[1]));
+      return item ? json(200, aDto(item)) : error(404, 'No existe');
+    }
+    const actorCatalogo = usuarioDesdeToken(headers);
+    if (!actorCatalogo) return error(401, 'Debes iniciar sesion para realizar esta accion.');
+    if (actorCatalogo.rol !== 'ADMIN') return error(403, 'No tienes permisos para realizar esta accion.');
+    if (!body.nombre && metodo !== 'DELETE') return error(400, 'Los datos enviados no son validos.', ['El nombre es obligatorio']);
+
+    if (metodo === 'POST') {
+      if (!ruta.startsWith('/productos') && [...lista.values()].some((x) => x.nombre.toLowerCase() === body.nombre.toLowerCase())) {
+        return error(409, `Ya existe un registro con el nombre '${body.nombre}'`);
+      }
+      const id = siguienteId++;
+      const nuevo = { ...body, [campoId]: id };
+      lista.set(id, nuevo);
+      return json(201, aDto(nuevo));
+    }
+    if (metodo === 'PUT' && matchId) {
+      const item = lista.get(Number(matchId[1]));
+      Object.assign(item, body);
+      return json(200, aDto(item));
+    }
+    if (metodo === 'DELETE' && matchId) {
+      lista.delete(Number(matchId[1]));
+      return json(204);
+    }
+  }
 
   // ── /auth ──
   if (ruta === '/auth/login' && metodo === 'POST') {
@@ -206,7 +280,22 @@ function check(nombre, condicion) {
 
 async function main() {
   const server = await iniciarServidorEstatico();
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  // CHROMIUM_PATH permite indicar un Chromium concreto; si no, usa el de Playwright.
+  const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+
+  // ── Degradación elegante: con la API caída, el catálogo local sigue funcionando ──
+  const contextoSinApi = await browser.newContext();
+  await contextoSinApi.route('http://localhost:8080/api/**', (route) => route.abort());
+  const paginaSinApi = await contextoSinApi.newPage();
+  const erroresSinApi = [];
+  paginaSinApi.on('pageerror', (err) => erroresSinApi.push(err.message));
+  await paginaSinApi.goto(`http://localhost:${SITE_PORT}/Index.html`);
+  await paginaSinApi.click('#nav-productos');
+  await paginaSinApi.waitForTimeout(400);
+  check('Sin backend, Productos muestra el catálogo local de respaldo (14)', await paginaSinApi.locator('.product-card').count() === 14);
+  check('Sin backend, no hay excepciones de JS', erroresSinApi.length === 0);
+  await contextoSinApi.close();
+
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -233,8 +322,16 @@ async function main() {
   // ── Navegación básica ──
   await page.click('#nav-productos');
   await page.waitForSelector('#page-productos.active');
+  await page.waitForSelector('.product-card-desc');
   const productCount = await page.locator('.product-card').count();
-  check('La página de Productos muestra productos', productCount === 14);
+  check('La página de Productos muestra los productos de la API (14)', productCount === 14);
+  check('Las tarjetas muestran la descripción que viene de la API', await page.locator('.product-card-desc', { hasText: /^Descripcion API de RTX 4070$/ }).count() === 1);
+  check('Los productos de la API conservan el precio de referencia', await page.locator('.product-card', { hasText: 'RTX 4070 Ti' }).locator('.product-card-price').textContent().then((t) => t.includes('3.600.000')));
+
+  await page.click('#products-categories [data-category="gpu"]');
+  await page.waitForTimeout(150);
+  check('El filtro por categoría (Tarjetas Gráficas) usa la categoría de la BD', await page.locator('.product-card').count() === 5);
+  await page.click('#products-categories [data-category="all"]');
 
   await page.fill('#products-search', 'ryzen');
   await page.waitForTimeout(150);
@@ -397,6 +494,66 @@ async function main() {
   await page.click('[data-admin-tab="suscripciones"]');
   await page.waitForTimeout(200);
   check('El panel admin carga la tabla de suscripciones sin errores', await page.locator('#admin-suscripciones-table').isVisible());
+
+  check('Un nombre con HTML se muestra como texto y no se inyecta (anti-XSS)',
+    (await page.locator('#xss-inyectado').count()) === 0 &&
+    (await page.locator('#admin-usuarios-table', { hasText: '<img src=x id=xss-inyectado>' }).count()) === 1);
+
+  // ── Panel admin: Catálogo ──
+  await page.click('[data-admin-tab="catalogo"]');
+  await page.waitForTimeout(200);
+  check('La pestaña Catálogo lista los 14 productos de la API', await page.locator('#admin-catalogo-table tbody tr').count() === 14);
+
+  await page.fill('#nueva-marca-nombre', 'Seasonic');
+  await page.click('#btn-nueva-marca');
+  await page.waitForSelector('.toast-exito:has-text("Seasonic")');
+  await page.fill('#nueva-categoria-nombre', 'Fuente de Poder');
+  await page.click('#btn-nueva-categoria');
+  await page.waitForSelector('.toast-exito:has-text("Fuente de Poder")');
+  check('Se crean una marca y una categoría desde el panel', marcas.size === 7 && categorias.size === 4);
+
+  await page.fill('#nueva-marca-nombre', 'Intel');
+  await page.click('#btn-nueva-marca');
+  await page.waitForSelector('.toast-error:has-text("Ya existe")');
+  check('Una marca repetida muestra el error 409 del backend', true);
+
+  await page.click('#btn-nuevo-producto');
+  await page.waitForSelector('#producto-modal.active');
+  await page.fill('#producto-nombre', 'Focus GX-750');
+  await page.fill('#producto-descripcion', '750 W, 80 Plus Gold');
+  await page.selectOption('#producto-marca', { label: 'Seasonic' });
+  await page.selectOption('#producto-categoria', { label: 'Fuente de Poder' });
+  await page.click('#producto-form-submit');
+  await page.waitForSelector('.toast-exito:has-text("Producto creado")');
+  await page.waitForTimeout(300);
+  check('Crear un producto lo agrega a la tabla del catálogo', await page.locator('#admin-catalogo-table tbody tr').count() === 15);
+
+  const filaNueva = page.locator('#admin-catalogo-table tbody tr', { hasText: 'Focus GX-750' });
+  await filaNueva.locator('[data-editar-producto-id]').click();
+  await page.waitForSelector('#producto-modal.active');
+  check('Editar precarga el formulario del producto', await page.locator('#producto-nombre').inputValue() === 'Focus GX-750');
+  await page.fill('#producto-nombre', 'Focus GX-850');
+  await page.click('#producto-form-submit');
+  await page.waitForSelector('.toast-exito:has-text("Producto actualizado")');
+  await page.waitForTimeout(300);
+  check('Editar un producto actualiza la tabla', await page.locator('#admin-catalogo-table tbody tr', { hasText: 'Focus GX-850' }).count() === 1);
+
+  await page.click('#nav-productos');
+  await page.click('#products-categories [data-category="fuentes"]');
+  await page.waitForTimeout(200);
+  check('El producto nuevo aparece en Productos > Fuentes de Poder con "Precio por confirmar"',
+    await page.locator('.product-card', { hasText: 'Focus GX-850' }).locator('.product-card-price').textContent().then((t) => t.includes('Precio por confirmar')));
+  await page.click('#products-categories [data-category="all"]');
+
+  await page.click('#nav-admin');
+  await page.waitForSelector('#page-admin.active');
+  await page.click('[data-admin-tab="catalogo"]');
+  await page.waitForTimeout(300);
+  page.once('dialog', (d) => d.accept());
+  await page.locator('#admin-catalogo-table tbody tr', { hasText: 'Focus GX-850' }).locator('[data-eliminar-producto-id]').click();
+  await page.waitForSelector('.toast-exito:has-text("Producto eliminado")');
+  await page.waitForTimeout(300);
+  check('Eliminar un producto lo quita de la tabla', await page.locator('#admin-catalogo-table tbody tr').count() === 14);
 
   check('No se registraron excepciones de JS (pageerror) en todo el recorrido', erroresJS.length === 0);
   if (erroresJS.length > 0) {

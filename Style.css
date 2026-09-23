@@ -710,3 +710,9 @@ footer {
   .user-name { display: none; }
   .user-dropdown { width: 220px; }
 }
+/* ── Catálogo: descripción en tarjetas y barra de herramientas del admin ── */
+.product-card-desc { color: var(--gray3); font-size: 0.8rem; margin-top: 0.35rem; line-height: 1.35; }
+.admin-catalogo-toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.admin-quick-add { display: flex; gap: 0.5rem; align-items: center; flex: 1 1 240px; }
+.admin-quick-add .form-input { margin: 0; }
+select.form-input { cursor: pointer; }
