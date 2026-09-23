@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,7 +20,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.buildzone.api.repository.UsuarioRepository;
 import com.buildzone.api.security.JwtAuthenticationFilter;
+import com.buildzone.api.security.JwtService;
 import com.buildzone.api.security.RespuestaErrorSeguridad;
 
 /**
@@ -38,14 +39,17 @@ public class SecurityConfig {
 
     private static final String ADMIN = "ADMIN";
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtService jwtService;
+    private final UsuarioRepository usuarioRepository;
     private final RespuestaErrorSeguridad respuestaErrorSeguridad;
     private final List<String> origenesPermitidos;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+    public SecurityConfig(JwtService jwtService,
+                          UsuarioRepository usuarioRepository,
                           RespuestaErrorSeguridad respuestaErrorSeguridad,
                           @Value("${buildzone.cors.origenes-permitidos:*}") String origenes) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtService = jwtService;
+        this.usuarioRepository = usuarioRepository;
         this.respuestaErrorSeguridad = respuestaErrorSeguridad;
         this.origenesPermitidos = Arrays.stream(origenes.split(",")).map(String::trim).toList();
     }
@@ -83,22 +87,10 @@ public class SecurityConfig {
                             antMatcher("/api/categorias/**")).hasRole(ADMIN)
                     // Todo lo demas requiere sesion (perfil propio, suscripciones propias)
                     .anyRequest().authenticated())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtAuthenticationFilter(jwtService, usuarioRepository),
+                    UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    }
-
-    /**
-     * Evita que Spring Boot registre el filtro JWT tambien como filtro
-     * general del servidor (por ser un {@code @Component}); debe correr
-     * unicamente dentro de la cadena de Spring Security.
-     */
-    @Bean
-    public FilterRegistrationBean<JwtAuthenticationFilter> desactivarRegistroAutomaticoJwt(
-            JwtAuthenticationFilter filtro) {
-        FilterRegistrationBean<JwtAuthenticationFilter> registro = new FilterRegistrationBean<>(filtro);
-        registro.setEnabled(false);
-        return registro;
     }
 
     /** BCrypt con factor de costo por defecto (10). */

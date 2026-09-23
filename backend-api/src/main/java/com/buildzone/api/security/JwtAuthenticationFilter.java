@@ -7,7 +7,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.buildzone.api.repository.UsuarioRepository;
@@ -26,8 +25,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * Si el token falta o es invalido no se corta la peticion: simplemente
  * queda anonima, y es {@code SecurityConfig} quien decide si la ruta
  * lo permite (rutas publicas) o responde 401.
+ * <p>
+ * No es un {@code @Component} a proposito: lo crea {@code SecurityConfig}
+ * para que se ejecute solo dentro de la cadena de Spring Security y no
+ * tambien como filtro general del servidor.
  */
-@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String PREFIJO = "Bearer ";
