@@ -1,168 +1,250 @@
 # buildzone-api
 
-API REST del catalogo de BuildZone (Producto, Marca, Categoria), construida
-con Spring Boot sobre la misma base de datos que ya usa el modulo de
-consola JDBC (`backend-java`) del proyecto formativo **Proyecto BuildZone**.
+API REST de **BuildZone**, construida con Spring Boot. Es el backend que consume el
+front-end de la raíz del proyecto (`Index.html` + `api.js`) y reúne tres módulos:
 
-Este proyecto **no reemplaza** a `backend-java`: es una capa REST adicional
-e independiente sobre los mismos datos (las tablas `producto`, `marca` y
-`categoria`), pensada para ser consumida por un front-end u otro cliente
-HTTP, en vez de por un menu de consola. Vive en su propia carpeta
-(`backend-api`) dentro del mismo repositorio de `Proyecto BuildZone`, sin
-modificar nada de `backend-java`.
+| Módulo | Qué hace | Endpoints |
+|---|---|---|
+| **Catálogo** | CRUD de Producto, Marca y Categoría sobre las tablas que ya existen en la base `buildzone` (las mismas que usa `backend-java`) | `/api/productos`, `/api/marcas`, `/api/categorias` |
+| **Seguridad y usuarios** | Registro, inicio de sesión con JWT, perfil propio, cambio de contraseña y administración de usuarios por rol | `/api/auth`, `/api/usuarios` |
+| **Planes y suscripciones** | Planes de pago y suscripción de cada usuario (alta, cancelación, vencimiento, historial) | `/api/planes`, `/api/suscripciones` |
 
-## Tecnologias
+`backend-java` (consola JDBC) sigue existiendo y no se modificó: las dos aplicaciones
+trabajan sobre la misma base de datos.
 
-| Capa | Tecnologia |
+## Tecnologías por capa
+
+| Capa | Tecnología / librería |
 |---|---|
-| Lenguaje | Java 21 |
-| Framework | Spring Boot 3.3 (Spring Web, Spring Data JPA) |
-| Validacion | Bean Validation (`@NotBlank`, `@Size`, `@NotNull`) |
-| Base de datos | MySQL/MariaDB (XAMPP) — base de datos `buildzone` ya existente |
-| Build | Maven |
+| Lenguaje y build | Java 21, Maven, Spring Boot 3.3.4 |
+| Presentación (API REST) | Spring Web (`@RestController`), Jackson (JSON), Bean Validation |
+| Seguridad (transversal) | Spring Security 6, JJWT 0.12.6 (tokens JWT HS256), BCrypt |
+| Lógica de negocio | Servicios Spring (`@Service`) con transacciones (`@Transactional`) |
+| Acceso a datos | Spring Data JPA, Hibernate 6 |
+| Base de datos | MySQL/MariaDB (XAMPP) en el perfil por defecto; H2 en memoria en `dev` y en las pruebas |
+| Pruebas | JUnit 5, Mockito, AssertJ, MockMvc, spring-security-test |
 | Control de versiones | Git |
 
-## Estructura del proyecto
+## Arquitectura y paquetes
+
+La API sigue una arquitectura **en capas**. Cada petición recorre
+`controller → service → repository → base de datos`, y ninguna capa se salta a la siguiente.
 
 ```
-buildzone-api/
-├── pom.xml
-├── src/main/resources/application.properties   Configuracion (puerto, BD)
-└── src/main/java/com/buildzone/api/
-    ├── BuildzoneApiApplication.java             Punto de entrada
-    ├── model/                                   Entidades JPA
-    │   ├── Producto.java
-    │   ├── Marca.java
-    │   └── Categoria.java
-    ├── repository/                              Acceso a datos (Spring Data)
-    │   ├── ProductoRepository.java
-    │   ├── MarcaRepository.java
-    │   └── CategoriaRepository.java
-    ├── dto/                                      Objetos de entrada/salida
-    │   ├── ProductoRequest.java / ProductoResponse.java
-    │   ├── MarcaRequest.java / MarcaResponse.java
-    │   └── CategoriaRequest.java / CategoriaResponse.java
-    ├── service/                                  Reglas de negocio
-    │   ├── ProductoService.java (+ impl)
-    │   ├── MarcaService.java (+ impl)
-    │   └── CategoriaService.java (+ impl)
-    ├── controller/                                Endpoints REST
-    │   ├── ProductoController.java
-    │   ├── MarcaController.java
-    │   └── CategoriaController.java
-    └── exception/                                Manejo centralizado de errores
-        ├── GlobalExceptionHandler.java
-        ├── RecursoNoEncontradoException.java
-        └── RecursoDuplicadoException.java
+src/main/java/com/buildzone/api/
+├── BuildzoneApiApplication.java  Punto de entrada
+├── controller/     Capa de presentación: recibe HTTP, valida DTOs y delega
+│   ├── AuthController, UsuarioController
+│   ├── PlanController, SuscripcionController
+│   └── ProductoController, MarcaController, CategoriaController
+├── service/        Capa de negocio: interfaces (contratos de casos de uso)
+│   └── impl/       Implementaciones con las reglas de negocio
+├── repository/     Capa de datos: interfaces Spring Data JPA
+├── model/          Entidades JPA (Usuario, PlanSuscripcion, Suscripcion, Producto, Marca, Categoria)
+│   └── enums/      Rol, EstadoUsuario, EstadoSuscripcion
+├── dto/            Objetos de entrada/salida (la entidad nunca sale al cliente)
+├── security/       JwtService, JwtAuthenticationFilter, UsuarioAutenticado, RespuestaErrorSeguridad
+├── config/         SecurityConfig, AppConfig (Clock), DatosInicialesConfig, CatalogoDemoConfig
+└── exception/      GlobalExceptionHandler, ErrorResponse y excepciones de negocio
 ```
 
-## Estandares de codificacion aplicados
+### Patrones de diseño aplicados
 
-- Paquetes en minuscula por responsabilidad (`model`, `repository`, `dto`,
-  `service`, `controller`, `exception`).
-- Clases en PascalCase, metodos y variables en camelCase con nombres que
-  describen la accion (`listar`, `crear`, `actualizar`, `eliminar`,
-  `buscarOFallar`).
-- Separacion en capas: Controller (HTTP) -> Service (reglas de negocio) ->
-  Repository (persistencia), programando contra interfaces
-  (`MarcaService`, no `MarcaServiceImpl`, en las dependencias).
-- DTOs de entrada validados con Bean Validation; nunca se expone la
-  entidad JPA directamente en la respuesta (se usa un DTO de respuesta).
-- Comentarios Javadoc en cada clase y metodo explicando su proposito.
-- Manejo centralizado de errores con `@RestControllerAdvice`, para que
-  cada tipo de error (validacion, recurso no encontrado, nombre
-  duplicado, violacion de llave foranea) tenga una respuesta HTTP
-  consistente en vez del error generico de Spring.
-
-## Endpoints de la API
-
-Base URL local: `http://localhost:8082`
-
-### Marca — `/api/marcas`
-
-| Metodo | Ruta | Descripcion | Body | Respuesta exitosa |
-|---|---|---|---|---|
-| GET | `/api/marcas` | Lista todas las marcas | — | 200 OK, arreglo de marcas |
-| GET | `/api/marcas/{id}` | Consulta una marca por id | — | 200 OK, o 404 si no existe |
-| POST | `/api/marcas` | Crea una marca | `{"nombre": "...", "descripcion": "..."}` | 201 Created |
-| PUT | `/api/marcas/{id}` | Actualiza una marca | `{"nombre": "...", "descripcion": "..."}` | 200 OK, o 404 si no existe |
-| DELETE | `/api/marcas/{id}` | Elimina una marca | — | 204 No Content, o 404/409 |
-
-Ejemplo de respuesta (`GET /api/marcas/1`):
-```json
-{ "idMarca": 1, "nombre": "Nike", "descripcion": "Ropa y calzado deportivo" }
-```
-
-### Categoria — `/api/categorias`
-
-Mismos 5 endpoints que Marca, reemplazando `/api/marcas` por
-`/api/categorias` y `idMarca` por `idCategoria`.
-
-### Producto — `/api/productos`
-
-| Metodo | Ruta | Descripcion | Body | Respuesta exitosa |
-|---|---|---|---|---|
-| GET | `/api/productos` | Lista todos los productos | — | 200 OK, arreglo de productos |
-| GET | `/api/productos/{id}` | Consulta un producto por id | — | 200 OK, o 404 si no existe |
-| POST | `/api/productos` | Crea un producto | ver abajo | 201 Created |
-| PUT | `/api/productos/{id}` | Actualiza un producto | ver abajo | 200 OK, o 404 |
-| DELETE | `/api/productos/{id}` | Elimina un producto | — | 204 No Content, o 404 |
-
-Body de `POST`/`PUT /api/productos`:
-```json
-{
-  "nombre": "Camiseta deportiva",
-  "descripcion": "Camiseta transpirable talla M",
-  "imagen": "camiseta.jpg",
-  "idMarca": 1,
-  "idCategoria": 2
-}
-```
-
-Respuesta (incluye el nombre de marca/categoria, no solo el id):
-```json
-{
-  "idProducto": 5,
-  "nombre": "Camiseta deportiva",
-  "descripcion": "Camiseta transpirable talla M",
-  "imagen": "camiseta.jpg",
-  "idMarca": 1,
-  "nombreMarca": "Nike",
-  "idCategoria": 2,
-  "nombreCategoria": "Ropa"
-}
-```
-
-### Codigos de error comunes
-
-| Codigo | Cuando ocurre |
+| Patrón | Dónde |
 |---|---|
-| 400 Bad Request | Datos invalidos (nombre vacio, id de marca/categoria faltante, etc.) |
-| 404 Not Found | Se pide/actualiza/elimina un id que no existe |
-| 409 Conflict | Nombre de marca/categoria duplicado, o se intenta eliminar una marca/categoria que todavia tiene productos asociados |
+| **MVC / arquitectura en capas** | `controller` → `service` → `repository` |
+| **Repository** | Interfaces `*Repository` de Spring Data: la persistencia queda aislada del negocio |
+| **DTO** | `*Request` / `*Response`: validan la entrada y ocultan datos sensibles (el hash de la contraseña nunca sale) |
+| **Inyección de dependencias** | Todas las dependencias entran por constructor y se programa contra interfaces (`AuthService`, no `AuthServiceImpl`) |
+| **Chain of Responsibility** | `JwtAuthenticationFilter` dentro de la cadena de filtros de Spring Security |
+| **Static Factory Method** | `UsuarioResponse.desde(...)`, `PlanResponse.desde(...)`, `ErrorResponse.de(...)` |
+| **Controller Advice** (manejo centralizado de errores) | `GlobalExceptionHandler` convierte cada excepción en un `ErrorResponse` uniforme |
+| **Strategy (reloj inyectable)** | `Clock` se inyecta en `SuscripcionServiceImpl` para fijar la fecha en las pruebas |
 
-## Como ejecutarlo
+## Mecanismos de seguridad
 
-Requiere Java 21, Maven y MySQL/MariaDB corriendo (XAMPP, usuario `root`
-sin contrasena). La base de datos `buildzone` y sus tablas ya deben
-existir (las crea/usa `backend-java`); esta API solo lee y escribe sobre
-ellas, no las crea.
+- **Autenticación sin estado con JWT**: `POST /api/auth/login` devuelve un token firmado
+  con HMAC-SHA256 que vence en 8 horas. El cliente lo envía en `Authorization: Bearer <token>`.
+- **Contraseñas con BCrypt**: nunca se guardan ni se devuelven en texto plano.
+- **Autorización por rol** (`USUARIO` / `ADMIN`) en `SecurityConfig`, por ruta y verbo HTTP.
+- **Revalidación en cada petición**: el filtro vuelve a leer el usuario en la base, así que
+  desactivar una cuenta o quitarle el rol ADMIN tiene efecto inmediato aunque su token siga vigente.
+- **Reglas de negocio de seguridad**: un ADMIN no puede quitarse su propio rol ni desactivarse;
+  un usuario solo puede cancelar sus propias suscripciones; el perfil `/me` siempre usa el id del
+  token, nunca uno enviado por el cliente.
+- **Mensajes de login que no filtran información**: el mismo error para "usuario no existe" y
+  "contraseña incorrecta".
+- **Validación de entrada** con Bean Validation en todos los DTO.
+- **Errores sin trazas internas**: `GlobalExceptionHandler` y `server.error.include-stacktrace=never`.
+- **CORS** configurable (`buildzone.cors.origenes-permitidos`) y CSRF deshabilitado (no hay cookies de sesión).
+- **Secretos por variables de entorno**: `JWT_SECRET`, `DB_USER`, `DB_PASSWORD`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+- En el front-end, todo dato del usuario se escapa con `escaparHtml` antes de insertarlo en el HTML (anti-XSS).
 
-```bash
-mvn spring-boot:run
+### Matriz de permisos
+
+| Ruta | Público | USUARIO | ADMIN |
+|---|:-:|:-:|:-:|
+| `POST /api/auth/registro`, `POST /api/auth/login` | ✅ | ✅ | ✅ |
+| `GET /api/productos`, `/api/marcas`, `/api/categorias` (y `/{id}`) | ✅ | ✅ | ✅ |
+| `POST/PUT/DELETE` de productos, marcas y categorías | ❌ 401 | ❌ 403 | ✅ |
+| `GET /api/planes` | ✅ | ✅ | ✅ |
+| `GET /api/planes/todos`, `POST/PUT/DELETE /api/planes` | ❌ 401 | ❌ 403 | ✅ |
+| `GET/PUT /api/usuarios/me`, `PUT /api/usuarios/me/password` | ❌ 401 | ✅ | ✅ |
+| `GET /api/usuarios`, `PATCH /api/usuarios/{id}/rol`, `PATCH /api/usuarios/{id}/estado` | ❌ 401 | ❌ 403 | ✅ |
+| `POST /api/suscripciones`, `GET /api/suscripciones/me`, `GET /api/suscripciones/me/activa` | ❌ 401 | ✅ | ✅ |
+| `DELETE /api/suscripciones/{id}` | ❌ 401 | ✅ (solo las propias) | ✅ |
+| `GET /api/suscripciones` | ❌ 401 | ❌ 403 | ✅ |
+
+## Endpoints
+
+Base URL local: `http://localhost:8080`
+
+### Autenticación — `/api/auth`
+
+| Método | Ruta | Body | Respuesta |
+|---|---|---|---|
+| POST | `/api/auth/registro` | `{"nombre","apellido","username","email","password"}` | 201 `{token, tipo:"Bearer", usuario}` · 400 · 409 |
+| POST | `/api/auth/login` | `{"identificador": "correo o username", "password"}` | 200 `{token, tipo, usuario}` · 401 · 403 (cuenta inactiva) |
+
+### Usuarios — `/api/usuarios`
+
+| Método | Ruta | Body | Respuesta |
+|---|---|---|---|
+| GET | `/api/usuarios/me` | — | 200 usuario |
+| PUT | `/api/usuarios/me` | `{"nombre","apellido","email"}` | 200 usuario · 409 correo en uso |
+| PUT | `/api/usuarios/me/password` | `{"passwordActual","passwordNueva"}` | 204 · 400 |
+| GET | `/api/usuarios` | — | 200 lista (ADMIN) |
+| PATCH | `/api/usuarios/{id}/rol` | `{"rol":"ADMIN"}` | 200 (ADMIN) |
+| PATCH | `/api/usuarios/{id}/estado` | `{"estado":"INACTIVO"}` | 200 (ADMIN) |
+
+Usuario de respuesta:
+```json
+{ "id": 1, "nombre": "Ana", "apellido": "Gómez", "username": "ana.gomez",
+  "email": "ana@buildzone.com", "rol": "USUARIO", "estado": "ACTIVO",
+  "fechaRegistro": "2026-09-23T10:15:00" }
 ```
 
-El servicio queda disponible en `http://localhost:8082` (puerto distinto
-al de `auth-service`, que usa 8081, para poder correr ambos a la vez).
+### Planes — `/api/planes`
 
-## Control de versiones
+| Método | Ruta | Body | Respuesta |
+|---|---|---|---|
+| GET | `/api/planes` | — | 200 planes activos, del más barato al más caro |
+| GET | `/api/planes/todos` | — | 200 todos (ADMIN) |
+| POST | `/api/planes` | `{"nombre","descripcion","precio","duracionDias"}` | 201 (ADMIN) · 409 |
+| PUT | `/api/planes/{id}` | igual que POST | 200 (ADMIN) |
+| DELETE | `/api/planes/{id}` | — | 204: borrado lógico, `activo=false` (ADMIN) |
 
-Este proyecto se agrega como una carpeta nueva (`backend-api`) dentro del
-repositorio Git que ya existe para `Proyecto BuildZone`, sin tocar
-`backend-java`:
+### Suscripciones — `/api/suscripciones`
+
+| Método | Ruta | Body | Respuesta |
+|---|---|---|---|
+| POST | `/api/suscripciones` | `{"planId": 2}` | 201. Si ya había una suscripción activa a otro plan, esa pasa a `CANCELADA` |
+| GET | `/api/suscripciones/me/activa` | — | 200 la vigente · 204 si no hay |
+| GET | `/api/suscripciones/me` | — | 200 historial propio |
+| DELETE | `/api/suscripciones/{id}` | — | 204 · 403 si es de otro usuario · 400 si no está activa |
+| GET | `/api/suscripciones` | — | 200 todas (ADMIN) |
+
+Suscripción de respuesta:
+```json
+{ "id": 5, "usuarioId": 1,
+  "plan": { "id": 2, "nombre": "Premium", "descripcion": "...", "precio": 29900.00, "duracionDias": 30, "activo": true },
+  "fechaInicio": "2026-09-23", "fechaFin": "2026-10-23", "estado": "ACTIVA" }
+```
+
+### Catálogo — `/api/productos`, `/api/marcas`, `/api/categorias`
+
+Cada recurso tiene los 5 endpoints CRUD (`GET` lista, `GET /{id}`, `POST`, `PUT /{id}`, `DELETE /{id}`).
+
+- Marca / Categoría: body `{"nombre","descripcion"}`, nombre único (409 si se repite). Si se
+  intenta borrar una marca o categoría que todavía tiene productos, la respuesta es 409.
+- Producto: body `{"nombre","descripcion","imagen","idMarca","idCategoria"}`. La respuesta
+  incluye `nombreMarca` y `nombreCategoria`.
+
+### Formato de error (todas las rutas)
+
+```json
+{ "timestamp": "2026-09-23T10:15:00", "status": 400, "error": "Bad Request",
+  "mensaje": "Los datos enviados no son validos.", "ruta": "/api/auth/registro",
+  "detalles": ["El correo no tiene un formato valido."] }
+```
+
+| Código | Cuándo |
+|---|---|
+| 400 | Validación, JSON mal formado o regla de negocio (contraseña actual incorrecta, plan inactivo...) |
+| 401 | Sin token, token vencido o alterado, o credenciales incorrectas |
+| 403 | Rol insuficiente, cuenta inactiva o recurso de otro usuario |
+| 404 | Id o ruta inexistente |
+| 409 | Nombre, correo o username repetido; integridad referencial |
+| 500 | Error inesperado (se registra en el log, sin detalles internos para el cliente) |
+
+## Ambientes
+
+| Ambiente | Perfil | Base de datos | Uso |
+|---|---|---|---|
+| Desarrollo rápido | `dev` | H2 en memoria, tablas creadas por Hibernate, catálogo de ejemplo | Probar todo sin XAMPP |
+| Pruebas automatizadas | `test` | H2 en memoria (`src/test/resources/application-test.properties`) | `mvn test` |
+| Desarrollo con XAMPP / producción | (por defecto) | MySQL/MariaDB `buildzone` en `localhost:3306` | Datos reales |
+
+### Opción A: sin XAMPP (perfil dev)
 
 ```bash
-git add backend-api
-git commit -m "feat: API REST de catalogo (Producto, Marca, Categoria) - backend-api"
-git push
+cd backend-api
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
+
+- API: `http://localhost:8080`
+- Consola H2: `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:buildzone`, usuario `sa`, sin contraseña)
+- Administrador inicial: `admin@buildzone.com` / `Admin1234`
+
+### Opción B: con MySQL/MariaDB (XAMPP)
+
+1. Inicie Apache y MySQL en XAMPP.
+2. Ejecute **una sola vez** `database/mysql/01_usuarios_suscripciones.sql` sobre la base `buildzone`
+   (phpMyAdmin → buildzone → pestaña SQL → pegar y ejecutar). Crea las tablas `usuario_cuenta`,
+   `plan_suscripcion` y `suscripcion` **sin tocar** las 10 tablas que ya existen.
+3. (Opcional) `database/mysql/02_datos_catalogo_ejemplo.sql` si el catálogo está vacío.
+4. Arranque la API:
+   ```bash
+   cd backend-api
+   mvn spring-boot:run
+   ```
+   Al primer arranque se crean automáticamente el usuario ADMIN y los planes Gratuito, Premium
+   y Premium Anual.
+
+En NetBeans o IntelliJ basta con abrir la carpeta `backend-api` (se reconoce el `pom.xml`) y
+ejecutar `BuildzoneApiApplication`. Para el perfil dev agregue `-Dspring.profiles.active=dev`
+en las opciones de la VM, o `spring.profiles.active=dev` en *Run → Set Project Configuration*.
+
+### Variables de configuración
+
+| Propiedad | Variable de entorno | Valor por defecto |
+|---|---|---|
+| `server.port` | `SERVER_PORT` | `8080` |
+| `spring.datasource.username` | `DB_USER` | `root` |
+| `spring.datasource.password` | `DB_PASSWORD` | *(vacío, como XAMPP)* |
+| `buildzone.jwt.secret` | `JWT_SECRET` | clave de ejemplo: **cámbiela en producción** (Base64, mínimo 256 bits) |
+| `buildzone.jwt.expiracion-ms` | `BUILDZONE_JWT_EXPIRACION_MS` | `28800000` (8 h) |
+| `buildzone.admin.email` | `ADMIN_EMAIL` | `admin@buildzone.com` |
+| `buildzone.admin.password` | `ADMIN_PASSWORD` | `Admin1234` |
+| `buildzone.cors.origenes-permitidos` | `BUILDZONE_CORS_ORIGENES_PERMITIDOS` | `*` |
+
+Para generar una clave JWT propia: `openssl rand -base64 48`.
+
+## Pruebas
+
+```bash
+cd backend-api
+mvn test
+```
+
+| Clase de prueba | Tipo | Qué verifica |
+|---|---|---|
+| `JwtServiceTest` | Unitaria | Token válido, vencido, firmado con otra clave, texto basura |
+| `AuthServiceImplTest` | Unitaria (Mockito) | Registro, duplicados, login por correo/username, credenciales malas, cuenta inactiva |
+| `UsuarioServiceImplTest` | Unitaria (Mockito) | Perfil, correo duplicado, cambio de contraseña, un ADMIN no puede quitarse su rol ni desactivarse |
+| `PlanServiceImplTest` | Unitaria (Mockito) | Listado, creación, duplicado, borrado lógico, 404 |
+| `SuscripcionServiceImplTest` | Unitaria (Mockito + reloj fijo) | Cálculo de fechas, cancelación de la anterior, plan inactivo, vencimiento, quién puede cancelar |
+| `MarcaServiceImplTest`, `ProductoServiceImplTest` | Unitaria (Mockito) | Reglas del catálogo (nombre único, marca/categoría existentes) |
+| `ApiIntegracionTest` | Integración (MockMvc + H2) | Contrato HTTP completo y matriz de permisos 401/403 |
+
+La interfaz web se valida aparte con Playwright (`../validacion/e2e_buildzone.mjs`, 47 verificaciones).
