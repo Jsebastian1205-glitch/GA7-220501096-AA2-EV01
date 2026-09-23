@@ -21,6 +21,9 @@
     <properties>
         <java.version>21</java.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <!-- Permite que Mockito/Byte Buddy funcionen si se ejecutan las pruebas
+             con un JDK mas nuevo que el soportado oficialmente (p. ej. Java 26). -->
+        <argLine>-Dnet.bytebuddy.experimental=true</argLine>
     </properties>
 
     <dependencies>

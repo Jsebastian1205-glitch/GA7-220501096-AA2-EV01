@@ -9,11 +9,11 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +31,13 @@ import com.buildzone.api.model.enums.Rol;
 import com.buildzone.api.repository.UsuarioRepository;
 import com.buildzone.api.security.JwtService;
 
-/** Pruebas unitarias del modulo de autenticacion. */
+/**
+ * Pruebas unitarias del modulo de autenticacion.
+ * <p>
+ * Se usa un {@link JwtService} real (no simulado): es una clase sin
+ * dependencias externas, y asi ademas se comprueba que el token emitido
+ * es valido. Los repositorios y el PasswordEncoder si se simulan.
+ */
 @ExtendWith(MockitoExtension.class)
 class AuthServiceImplTest {
 
@@ -39,10 +45,16 @@ class AuthServiceImplTest {
     private UsuarioRepository usuarioRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
-    @Mock
+    private static final String SECRETO = "V+ClppfJJpplwJCoBw1+E+TWBZw4ONFPwklx1J/omza5hFoT6/D9yO/EiKdHLRvV";
+
     private JwtService jwtService;
-    @InjectMocks
     private AuthServiceImpl authService;
+
+    @BeforeEach
+    void preparar() {
+        jwtService = new JwtService(SECRETO, 60_000);
+        authService = new AuthServiceImpl(usuarioRepository, passwordEncoder, jwtService);
+    }
 
     @Test
     @DisplayName("Registrar: crea la cuenta como USUARIO ACTIVO, con contrasena cifrada y correo en minuscula")
@@ -56,11 +68,10 @@ class AuthServiceImplTest {
             u.setId(10L);
             return u;
         });
-        when(jwtService.generarToken(any(Usuario.class))).thenReturn("token-jwt");
 
         AuthResponse respuesta = authService.registrar(request);
 
-        assertThat(respuesta.token()).isEqualTo("token-jwt");
+        assertThat(jwtService.extraerUsername(respuesta.token())).contains("ana.gomez");
         assertThat(respuesta.tipo()).isEqualTo("Bearer");
         assertThat(respuesta.usuario().id()).isEqualTo(10L);
         assertThat(respuesta.usuario().email()).isEqualTo("ana@mail.com");
@@ -101,11 +112,10 @@ class AuthServiceImplTest {
         Usuario ana = Fixtures.usuario(1L, "ana", Rol.USUARIO);
         when(usuarioRepository.findByEmailIgnoreCase("ana@buildzone.com")).thenReturn(Optional.of(ana));
         when(passwordEncoder.matches("Secreta123", "HASH-1")).thenReturn(true);
-        when(jwtService.generarToken(ana)).thenReturn("token-ana");
 
         AuthResponse respuesta = authService.iniciarSesion(new LoginRequest("ana@buildzone.com", "Secreta123"));
 
-        assertThat(respuesta.token()).isEqualTo("token-ana");
+        assertThat(jwtService.extraerUsername(respuesta.token())).contains("ana");
         assertThat(respuesta.usuario().username()).isEqualTo("ana");
     }
 
@@ -115,10 +125,10 @@ class AuthServiceImplTest {
         Usuario ana = Fixtures.usuario(1L, "ana", Rol.USUARIO);
         when(usuarioRepository.findByUsernameIgnoreCase("ana")).thenReturn(Optional.of(ana));
         when(passwordEncoder.matches("Secreta123", "HASH-1")).thenReturn(true);
-        when(jwtService.generarToken(ana)).thenReturn("token-ana");
 
-        assertThat(authService.iniciarSesion(new LoginRequest("ana", "Secreta123")).token())
-                .isEqualTo("token-ana");
+        String token = authService.iniciarSesion(new LoginRequest("ana", "Secreta123")).token();
+
+        assertThat(jwtService.extraerUsername(token)).contains("ana");
     }
 
     @Test
@@ -151,6 +161,5 @@ class AuthServiceImplTest {
 
         assertThatThrownBy(() -> authService.iniciarSesion(new LoginRequest("ana", "Secreta123")))
                 .isInstanceOf(AccesoDenegadoException.class);
-        verify(jwtService, never()).generarToken(any());
     }
 }
