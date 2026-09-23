@@ -2,18 +2,26 @@ package com.buildzone.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 
 /**
- * Punto de entrada de la API REST del catalogo de BuildZone.
+ * Punto de entrada de la API REST de BuildZone.
  * <p>
- * Expone servicios para administrar Producto, Marca y Categoria sobre la
- * misma base de datos que ya usa el modulo de consola JDBC de
- * {@code backend-java} (Proyecto Sena 1). Esta API no reemplaza ese
- * modulo: es una capa REST adicional e independiente sobre los mismos
- * datos, pensada para ser consumida por un front-end u otros clientes
- * HTTP en vez de por un menu de consola.
+ * Modulos que expone:
+ * <ul>
+ *   <li><b>Catalogo</b>: Producto, Marca y Categoria, sobre las mismas tablas
+ *       que usa el modulo de consola JDBC de {@code backend-java}.</li>
+ *   <li><b>Seguridad y usuarios</b>: registro, inicio de sesion con JWT,
+ *       perfil propio y administracion de usuarios por rol.</li>
+ *   <li><b>Planes y suscripciones</b>: planes de pago y suscripciones de
+ *       cada usuario.</li>
+ * </ul>
+ * Se excluye {@link UserDetailsServiceAutoConfiguration} porque la
+ * autenticacion es propia (JWT + BCrypt en {@code AuthService}) y no se
+ * quiere el usuario "user" con contrasena generada que Spring crea por
+ * defecto.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 public class BuildzoneApiApplication {
 
     /**
