@@ -30,7 +30,7 @@ function iniciarServidorEstatico() {
   return new Promise((resolve) => {
     const server = http.createServer(async (req, res) => {
       let urlPath = decodeURIComponent(req.url.split('?')[0]);
-      if (urlPath === '/') urlPath = '/Index.html';
+      if (urlPath === '/') urlPath = '/index.html';
       const filePath = path.join(SITE_DIR, urlPath);
       try {
         const contenido = await readFile(filePath);
@@ -289,7 +289,7 @@ async function main() {
   const paginaSinApi = await contextoSinApi.newPage();
   const erroresSinApi = [];
   paginaSinApi.on('pageerror', (err) => erroresSinApi.push(err.message));
-  await paginaSinApi.goto(`http://localhost:${SITE_PORT}/Index.html`);
+  await paginaSinApi.goto(`http://localhost:${SITE_PORT}/index.html`);
   await paginaSinApi.click('#nav-productos');
   await paginaSinApi.waitForTimeout(400);
   check('Sin backend, Productos muestra el catálogo local de respaldo (14)', await paginaSinApi.locator('.product-card').count() === 14);
@@ -311,7 +311,7 @@ async function main() {
 
   await context.route('http://localhost:8080/api/**', manejarApi);
 
-  await page.goto(`http://localhost:${SITE_PORT}/Index.html`);
+  await page.goto(`http://localhost:${SITE_PORT}/index.html`);
   await page.waitForSelector('#page-inicio.active');
 
   check('La página de inicio carga activa', await page.locator('#page-inicio.active').count() === 1);

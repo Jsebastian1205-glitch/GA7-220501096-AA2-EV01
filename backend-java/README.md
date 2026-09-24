@@ -15,7 +15,7 @@ Este es el unico backend de trabajo del proyecto: vive dentro de
 
 ```
 Proyecto Sena 1/
-├── Index.html, Style.css, *.js          Front-end
+├── index.html, Style.css, *.js          Front-end
 ├── validacion/                          Pruebas E2E (Playwright)
 └── backend-java/                        Este modulo
     ├── pom.xml

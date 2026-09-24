@@ -5,7 +5,7 @@
  * Se aisla en su propio archivo (sin dependencias) para que cualquier
  * módulo (auth.js, planes.js, cuenta.js, admin.js, script.js) pueda
  * usarlo sin preocuparse del orden de carga, siempre que este archivo
- * se incluya primero en Index.html.
+ * se incluya primero en index.html.
  */
 
 const FORMATEADOR_MONEDA = new Intl.NumberFormat('es-CO', {

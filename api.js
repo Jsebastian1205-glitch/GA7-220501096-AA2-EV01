@@ -6,13 +6,12 @@
  * la operación de negocio.
  *
  * Debe cargarse antes que auth.js/planes.js/cuenta.js/admin.js/script.js
- * en Index.html.
+ * en index.html.
  */
 
-// El backend corre en local durante el desarrollo (mvn spring-boot:run,
-// puerto 8080 según application.yml). Si en algún momento se despliega en
-// otra máquina, basta con cambiar esta constante.
-const API_BASE_URL = 'http://localhost:8080/api';
+// La URL del backend depende del ambiente (desarrollo local o producción)
+// y se define en config.js. Si config.js no se cargó, se asume desarrollo.
+const API_BASE_URL = (window.BUILDZONE_CONFIG && window.BUILDZONE_CONFIG.apiUrl) || 'http://localhost:8080/api';
 
 const TOKEN_STORAGE_KEY = 'buildzone_token';
 const USUARIO_STORAGE_KEY = 'buildzone_usuario';
@@ -77,7 +76,7 @@ async function peticionApi(ruta, opciones = {}) {
     });
   } catch (error) {
     throw new ApiError(
-      'No se pudo conectar con el servidor de BuildZone. Verifica que el backend esté encendido.',
+      'No se pudo conectar con el servidor de BuildZone. Verifica que el backend esté encendido (en la nube el primer acceso puede tardar hasta 1 minuto mientras el servidor despierta).',
       0,
       null
     );
