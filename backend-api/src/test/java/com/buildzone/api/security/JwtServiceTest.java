@@ -53,4 +53,12 @@ class JwtServiceTest {
         assertThat(jwt.extraerUsername("esto-no-es-un-token")).isEmpty();
         assertThat(jwt.extraerUsername("")).isEmpty();
     }
+
+    @Test
+    @DisplayName("Un secreto que no es Base64 (p. ej. generado por la nube) tambien sirve")
+    void secretoNoBase64SeDeriva() {
+        JwtService jwt = new JwtService("clave-generada-por-la-plataforma_sin-formato*", 60_000);
+
+        assertThat(jwt.extraerUsername(jwt.generarToken(ana))).contains("ana.gomez");
+    }
 }

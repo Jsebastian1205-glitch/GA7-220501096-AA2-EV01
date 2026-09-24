@@ -1,5 +1,8 @@
 package com.buildzone.api.security;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Optional;
 
@@ -32,8 +35,31 @@ public class JwtService {
 
     public JwtService(@Value("${buildzone.jwt.secret}") String secretoBase64,
                       @Value("${buildzone.jwt.expiracion-ms}") long expiracionMs) {
-        this.clave = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretoBase64));
+        this.clave = construirClave(secretoBase64);
         this.expiracionMs = expiracionMs;
+    }
+
+    /**
+     * Convierte el secreto configurado en una clave HMAC de al menos 256 bits.
+     * Si el valor es Base64 valido y suficientemente largo se usa tal cual;
+     * si no (por ejemplo un texto generado por la plataforma de despliegue),
+     * se deriva una clave de 256 bits con SHA-256 para no impedir el arranque.
+     */
+    static SecretKey construirClave(String secreto) {
+        try {
+            byte[] bytes = Decoders.BASE64.decode(secreto);
+            if (bytes.length >= 32) {
+                return Keys.hmacShaKeyFor(bytes);
+            }
+        } catch (RuntimeException ex) {
+            // No es Base64 valido: se deriva la clave mas abajo.
+        }
+        try {
+            byte[] derivada = MessageDigest.getInstance("SHA-256").digest(secreto.getBytes(StandardCharsets.UTF_8));
+            return Keys.hmacShaKeyFor(derivada);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 no disponible en la JVM", ex);
+        }
     }
 
     /**

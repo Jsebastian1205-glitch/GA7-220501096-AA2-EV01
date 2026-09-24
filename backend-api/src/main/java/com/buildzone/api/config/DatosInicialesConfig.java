@@ -52,7 +52,14 @@ public class DatosInicialesConfig implements ApplicationRunner {
         this.passwordEncoder = passwordEncoder;
         this.adminEmail = adminEmail;
         this.adminUsername = adminUsername;
-        this.adminPassword = adminPassword;
+        // Si la variable de entorno llega vacia se usa la contrasena por defecto
+        // (y se advierte en el log) en lugar de crear un admin sin contrasena.
+        if (adminPassword == null || adminPassword.isBlank()) {
+            LOG.warn("buildzone.admin.password esta vacio: se usa la contrasena por defecto. Cambiela.");
+            this.adminPassword = "Admin1234";
+        } else {
+            this.adminPassword = adminPassword;
+        }
     }
 
     @Override

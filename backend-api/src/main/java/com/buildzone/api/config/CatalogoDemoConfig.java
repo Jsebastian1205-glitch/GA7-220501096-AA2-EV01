@@ -20,13 +20,14 @@ import com.buildzone.api.repository.MarcaRepository;
 import com.buildzone.api.repository.ProductoRepository;
 
 /**
- * SOLO perfil "dev": carga un catalogo de ejemplo (el mismo que el
- * front-end tenia escrito a mano en script.js) en la base H2 en memoria,
- * para poder probar la aplicacion completa sin XAMPP. En el perfil por
- * defecto (MySQL) no se ejecuta: se usan los datos reales.
+ * Perfiles "dev" y "prod": carga un catalogo de ejemplo (el mismo que el
+ * front-end tenia escrito a mano en script.js) si la base no tiene
+ * productos, para poder usar la aplicacion completa sin XAMPP y en la
+ * demo desplegada en la nube. En el perfil por defecto (MySQL local) no
+ * se ejecuta: se usan los datos reales.
  */
 @Component
-@Profile("dev")
+@Profile({"dev", "prod"})
 @Order(2)
 public class CatalogoDemoConfig implements ApplicationRunner {
 
