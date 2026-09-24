@@ -1,7 +1,7 @@
 # buildzone-api
 
 API REST de **BuildZone**, construida con Spring Boot. Es el backend que consume el
-front-end de la raíz del proyecto (`Index.html` + `api.js`) y reúne tres módulos:
+front-end de la raíz del proyecto (`index.html` + `api.js`) y reúne tres módulos:
 
 | Módulo | Qué hace | Endpoints |
 |---|---|---|
@@ -183,7 +183,8 @@ Cada recurso tiene los 5 endpoints CRUD (`GET` lista, `GET /{id}`, `POST`, `PUT 
 |---|---|---|---|
 | Desarrollo rápido | `dev` | H2 en memoria, tablas creadas por Hibernate, catálogo de ejemplo | Probar todo sin XAMPP |
 | Pruebas automatizadas | `test` | H2 en memoria (`src/test/resources/application-test.properties`) | `mvn test` |
-| Desarrollo con XAMPP / producción | (por defecto) | MySQL/MariaDB `buildzone` en `localhost:3306` | Datos reales |
+| Desarrollo con XAMPP | (por defecto) | MySQL/MariaDB `buildzone` en `localhost:3306` | Datos reales |
+| Producción (Render) | `prod` | H2 en memoria (o MySQL externo con `DATABASE_URL`) | Demo pública desplegada con Docker |
 
 ### Opción A: sin XAMPP (perfil dev)
 
@@ -219,7 +220,7 @@ en las opciones de la VM, o `spring.profiles.active=dev` en *Run → Set Project
 
 | Propiedad | Variable de entorno | Valor por defecto |
 |---|---|---|
-| `server.port` | `SERVER_PORT` | `8080` |
+| `server.port` | `PORT` | `8080` |
 | `spring.datasource.username` | `DB_USER` | `root` |
 | `spring.datasource.password` | `DB_PASSWORD` | *(vacío, como XAMPP)* |
 | `buildzone.jwt.secret` | `JWT_SECRET` | clave de ejemplo: **cámbiela en producción** (Base64, mínimo 256 bits) |
@@ -239,7 +240,7 @@ mvn test
 
 | Clase de prueba | Tipo | Qué verifica |
 |---|---|---|
-| `JwtServiceTest` | Unitaria | Token válido, vencido, firmado con otra clave, texto basura |
+| `JwtServiceTest` | Unitaria | Token válido, vencido, firmado con otra clave, texto basura, secreto no Base64 |
 | `AuthServiceImplTest` | Unitaria (Mockito) | Registro, duplicados, login por correo/username, credenciales malas, cuenta inactiva |
 | `UsuarioServiceImplTest` | Unitaria (Mockito) | Perfil, correo duplicado, cambio de contraseña, un ADMIN no puede quitarse su rol ni desactivarse |
 | `PlanServiceImplTest` | Unitaria (Mockito) | Listado, creación, duplicado, borrado lógico, 404 |

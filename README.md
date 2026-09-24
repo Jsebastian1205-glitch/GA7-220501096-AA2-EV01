@@ -8,7 +8,8 @@ con cuentas de usuario, planes de suscripción y panel de administración.
 
 ```
 Proyecto Sena 1/
-├── Index.html, Style.css           Front-end (SPA sin framework, HTML + CSS + JavaScript)
+├── index.html, Style.css           Front-end (SPA sin framework, HTML + CSS + JavaScript)
+├── config.js      URL de la API según el ambiente (desarrollo / producción)
 ├── ui.js          Utilidades de interfaz: toasts, formato de moneda, escaparHtml (anti-XSS)
 ├── api.js         Capa de acceso al backend: fetch + JWT + manejo de errores HTTP
 ├── auth.js        Login, registro, cierre de sesión y menú de usuario
@@ -19,13 +20,16 @@ Proyecto Sena 1/
 ├── script.js      Navegación entre páginas, productos, comparador, blog, contacto
 ├── backend-api/   API REST Spring Boot (catálogo, seguridad, usuarios, planes, suscripciones)
 ├── backend-java/  Módulo de consola JDBC (CRUD de catálogo), etapa anterior del proyecto
-└── validacion/    Pruebas E2E de la interfaz con Playwright
+├── validacion/    Pruebas E2E de la interfaz con Playwright
+├── scripts/       Scripts .bat/.sh para iniciar, probar y construir el JAR
+├── render.yaml    Despliegue de la API en Render (Blueprint)
+└── .github/workflows/  CI (pruebas en cada push) y Release (publica el JAR)
 ```
 
 ## Arquitectura
 
 ```
- Navegador (Index.html + módulos JS)
+ Navegador (index.html + módulos JS)
         │  HTTP/JSON  ·  Authorization: Bearer <JWT>
         ▼
  backend-api (Spring Boot, puerto 8080)
@@ -107,19 +111,44 @@ Inicio ─┬─ Productos (filtro por categoría + buscador)
    # o, con XAMPP y el script 01 ya ejecutado:
    mvn spring-boot:run
    ```
-2. **Front-end**: abra `Index.html` con Live Server o con doble clic.
+2. **Front-end**: abra `index.html` con Live Server o con doble clic.
 3. Ingrese con `admin@buildzone.com` / `Admin1234` para ver el panel de administración,
    o cree una cuenta nueva desde "Regístrate".
 
 Si el backend está apagado, las páginas Productos y Comparador siguen funcionando con los
 datos locales de `script.js`, y las funciones de cuenta muestran un aviso de conexión.
 
+## Despliegue en la nube
+
+| Módulo | Plataforma | URL |
+|---|---|---|
+| Front-end | GitHub Pages | `https://<usuario>.github.io/<repositorio>/` |
+| API REST | Render (Docker, plan gratuito) | `https://<servicio>.onrender.com/api` |
+
+1. **API en Render**: *New → Blueprint*, seleccione este repositorio. Render lee `render.yaml`,
+   construye `backend-api/Dockerfile` y arranca con el perfil `prod` (H2 en memoria con datos de
+   ejemplo). Defina `ADMIN_PASSWORD` cuando lo pida.
+2. **Front-end en GitHub Pages**: *Settings → Pages → Deploy from a branch → main / (root)*.
+3. Copie la URL de Render en `API_URL_PRODUCCION` de `config.js`, haga commit y push.
+
+El plan gratuito de Render apaga el servicio tras 15 minutos sin uso; la primera petición
+después de eso tarda alrededor de un minuto mientras vuelve a arrancar.
+
+## Ejecutables
+
+- `scripts\construir-jar.bat` genera `backend-api/target/buildzone-api-1.0.0.jar`.
+- `scripts\ejecutar-jar.bat` lo ejecuta (`java -jar buildzone-api-1.0.0.jar --spring.profiles.active=dev`).
+- Al publicar una etiqueta (`git tag v1.0.0 && git push origin v1.0.0`), GitHub Actions crea un
+  *Release* con el JAR, el front-end empaquetado y los scripts SQL.
+
 ## Pruebas
 
 | Nivel | Dónde | Comando |
 |---|---|---|
-| Unitarias + integración (backend) | `backend-api/src/test` | `cd backend-api && mvn test` |
-| End-to-end (interfaz) | `validacion/e2e_buildzone.mjs` | `cd validacion && node e2e_buildzone.mjs` |
+| Unitarias + integración (backend, 59) | `backend-api/src/test` | `cd backend-api && mvn test` |
+| End-to-end (interfaz, 47) | `validacion/e2e_buildzone.mjs` | `cd validacion && npm install && npm test` |
+
+Ambas suites se ejecutan automáticamente en GitHub Actions en cada push (`.github/workflows/ci.yml`).
 
 ## Control de versiones
 
